@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Untitled :: Ceph Top Gun Enablement</title>
+    <link rel="canonical" href="https://likid0.github.io/ceph-top-gun-enablement/training/index.html">
+    <meta name="generator" content="Antora 3.1.2">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.ceph.com/en/latest/" target="_blank" style="display: flex; align-items: center; gap: 20px;">
+          <img src="../_/img/header_logo_reverse.svg" height="48px" alt="Ceph">
+          <span style="color: white; font-family: 'Roboto', sans-serif; font-size: 1.2rem; font-weight: 500;"> IBM Storage Ceph</span>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Get Help</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://www.ibm.com/docs/en/storage-ceph/latest" target="_blank">IBM Storage Ceph Documentation</a>
+            <a class="navbar-item" href="https://bugzilla.redhat.com/describecomponents.cgi?product=Red%20Hat%20OpenShift%20Container%20Storage" target="_blank">Browse Bugs</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Improve Guides</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item"
+            href="https://github.com/likid0/1528-Troubleshooting-Ceph-Repo/issues/new/choose" target="_blank">Open Issue</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Infos</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://community.ibm.com/community/user/storage/communities/community-home?CommunityKey=1142f81e-95e4-4381-95d0-7977f20d53fa" target="_blank">Our Blog</a>
+            <a class="navbar-item" href="https://www.youtube.com/@_shifthappens" target="_blank">IBM Shift Hapens Youtube Channel</a>
+            <a class="navbar-item" href="https://docs.ceph.com/en/latest/" target="_blank">Upstream Ceph Storage Technology</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="training" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Tech-Zone IBM Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Troubleshooting Workshop</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="lake.html">IBM Storage Ceph ZeroTrust DataLakehouse </a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Tech-Zone IBM Storage</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">Tech-Zone IBM Storage</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">master</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link is-current"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+</nav>
+<div class="edit-this-page"><a href="file:///antora/training/modules/ROOT/pages/index.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<div class="paragraph title-highlight">
+<p>Welcome to the IBM Storage Ceph ZeroTrust LakeHouse</p>
+</div>
+<div class="paragraph">
+<p>The IBM Storage Ceph Troubleshooting workshop is an in-depth Ceph
+enablement that strives to provide you with a good understanding of the Core Ceph
+Concepts &amp; Architecture, The content of the workshop is a technical Hands-on  Break and Fix Lab.</p>
+</div>
+<div class="sect1">
+<h2 id="_recommended_pre_requisites_before_starting_the_enablement"><a class="anchor" href="#_recommended_pre_requisites_before_starting_the_enablement"></a>Recommended Pre-Requisites before starting the enablement.</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before completing this course, there are some previous Tech-Zone Labs that we
+would recommend doing first; here is the list of Storage Ceph training available in Tech-Zone
+We would recommend completing the following before starting this enablement:
+. <a href="https://techzone.ibm.com/my/reservations/create/6567862cba056800175b6279">Install and Configure a Ceph Cluster</a> : Learn to set up a robust IBM Storage Ceph environment from scratch and deploy the Object Storage service using the Dashboard.
+. <a href="https://techzone.ibm.com/my/reservations/create/66c880e5eff555001e6e3582">Explore Advanced Object Storage Features</a> : Dive deep into SSL configuration, bucket policies, audit logs, Storage Class Tiering, and lifecycle management to enhance the security and efficiency of your object storage.
+. <a href="https://techzone.ibm.com/my/reservations/create/66c882763c41c8001e807f3c">Experience Unified Storage</a> : Gain hands-on experience with Ceph’s unified storage capabilities, including Block (RBD), File (NFS), and Object (S3), showcasing its versatility as an all-in-one storage solution.
+These labs demonstrate how IBM Storage Ceph can meet diverse enterprise storage needs, providing a scalable, secure, and unified storage solution. By mastering the deployment and management of block, file, and object storage within a single platform, organizations can streamline their storage infrastructure, improve operational efficiency, and reduce costs while ensuring data availability and integrity across various workloads.</p>
+</div>
+<div class="paragraph">
+<p>Also the following resources can be very handy if you feel a bit lost with the tasks asked in the Lab!:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="https://www.youtube.com/watch?v=PmLPbrf-x9g">Ceph Introduction by Sage</a></p>
+</li>
+<li>
+<p><a href="https://www.redbooks.ibm.com/redpieces/pdfs/redp5721.pdf">IBM Storage Ceph Concepts and Architecture Guide Redbook</a></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_looking_for_support_during_the_enablement"><a class="anchor" href="#_looking_for_support_during_the_enablement"></a>Looking for support during the enablement?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Any questions related to the training can be asked on the <code>#ceph-help</code> channel on the <code>IBM Storage</code> workspace.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_start_the_lab"><a class="anchor" href="#_start_the_lab"></a>Start the Lab!!</h2>
+<div class="sectionbody">
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The estimated time needed to go through the workshop is 90 minutes</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Start the IBM Storage Ceph ZeroTrust LakeHouse Lab and access the course material directly by clicking below:</p>
+</div>
+<div class="paragraph btn btn-primary">
+<p><a href="lake.html" class="xref page">IBM Storage Ceph ZeroTrust LakeHouse - Start the Course Now!</a></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_other_interesting_links"><a class="anchor" href="#_other_interesting_links"></a>Other interesting Links</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>IBM Storage Ceph website: <a href="https://www.ibm.com/products/ceph">Visit here</a></p>
+</li>
+<li>
+<p>IBM Storage Ceph documentation: <a href="http://docs.ceph.blue">View documentation</a></p>
+</li>
+<li>
+<p>IBM Storage Ceph video demos: <a href="http://easy.ceph.blue">Watch demos</a></p>
+</li>
+<li>
+<p>IBM Redbooks. IBM Storage Ceph Solutions Guide: <a href="https://www.redbooks.ibm.com/redpieces/pdfs/redp5715.pdf">Read Redbook</a></p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>This Enablement is not IBM official documentation for Ceph. For the official documentation, please see <a href="https://www.ibm.com/docs/en/storage-ceph/8" class="bare">https://www.ibm.com/docs/en/storage-ceph/8</a></p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="navbar-item" href="https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage" target="_blank">
+      <img src="../_/img/header_logo.svg" alt="Ceph">
+  </a>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

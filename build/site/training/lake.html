@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Untitled :: Ceph Top Gun Enablement</title>
+    <link rel="canonical" href="https://likid0.github.io/ceph-top-gun-enablement/training/lake.html">
+    <meta name="generator" content="Antora 3.1.2">
+    <link rel="stylesheet" href="../_/css/site.css">
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item" href="https://docs.ceph.com/en/latest/" target="_blank" style="display: flex; align-items: center; gap: 20px;">
+          <img src="../_/img/header_logo_reverse.svg" height="48px" alt="Ceph">
+          <span style="color: white; font-family: 'Roboto', sans-serif; font-size: 1.2rem; font-weight: 500;"> IBM Storage Ceph</span>
+      </a>
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Get Help</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://www.ibm.com/docs/en/storage-ceph/latest" target="_blank">IBM Storage Ceph Documentation</a>
+            <a class="navbar-item" href="https://bugzilla.redhat.com/describecomponents.cgi?product=Red%20Hat%20OpenShift%20Container%20Storage" target="_blank">Browse Bugs</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">Improve Guides</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item"
+            href="https://github.com/likid0/1528-Troubleshooting-Ceph-Repo/issues/new/choose" target="_blank">Open Issue</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="#">More Infos</a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://community.ibm.com/community/user/storage/communities/community-home?CommunityKey=1142f81e-95e4-4381-95d0-7977f20d53fa" target="_blank">Our Blog</a>
+            <a class="navbar-item" href="https://www.youtube.com/@_shifthappens" target="_blank">IBM Shift Hapens Youtube Channel</a>
+            <a class="navbar-item" href="https://docs.ceph.com/en/latest/" target="_blank">Upstream Ceph Storage Technology</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="training" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
+    <h3 class="title"><a href="index.html">Tech-Zone IBM Storage</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Troubleshooting Workshop</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="lake.html">IBM Storage Ceph ZeroTrust DataLakehouse </a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Tech-Zone IBM Storage</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <div class="title"><a href="index.html">Tech-Zone IBM Storage</a></div>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="index.html">master</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="index.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="index.html">Tech-Zone IBM Storage</a></li>
+    <li>Troubleshooting Workshop</li>
+    <li><a href="lake.html">IBM Storage Ceph ZeroTrust DataLakehouse </a></li>
+  </ul>
+</nav>
+<div class="edit-this-page"><a href="file:///antora/training/modules/ROOT/pages/lake.adoc">Edit this Page</a></div>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_introduction">1. Introduction</a></li>
+<li><a href="#_checking_the_current_state_of_the_lab">2. Checking the current state of the lab</a></li>
+<li><a href="#_breaking_our_ceph_cluster">3. Breaking our Ceph Cluster</a></li>
+<li><a href="#_let_the_fun_begin_fixing_our_cluster_issues">4. Let the Fun Begin, Fixing our cluster issues:</a>
+<ul class="sectlevel2">
+<li><a href="#_fixing_issue_number_1">4.1. Fixing Issue Number 1</a></li>
+<li><a href="#_fixing_issue_number_2">4.2. Fixing Issue Number 2</a></li>
+<li><a href="#_fixing_issue_number_3">4.3. Fixing Issue Number 3</a></li>
+<li><a href="#_fixing_issue_number_4">4.4. Fixing Issue Number 4</a></li>
+<li><a href="#_fixing_issue_number_5">4.5. Fixing Issue Number 5</a></li>
+<li><a href="#_fixing_issue_number_6">4.6. Fixing Issue Number 6</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="sect1">
+<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>1. Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This troubleshooting guide offers a practical, hands-on approach to diagnosing
+and resolving issues within an IBM Storage Ceph cluster. By employing a 'break
+and fix' methodology, you will begin with a healthy cluster that simulates
+real-world challenges you must resolve. This approach ensures a practical learning experience and helps users confidently handle real-world troubleshooting scenarios.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_checking_the_current_state_of_the_lab"><a class="anchor" href="#_checking_the_current_state_of_the_lab"></a>2. Checking the current state of the lab</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>If you are reading this doc, you should have your IBM Storage Ceph
+Troubleshooting TechZone Lab up and running. If that is not the case, please go
+to the IBM Storage Ceph Tech-Zone Collection and Order the troubleshooting Lab <a href="https://techzone.ibm.com/collection/64b92c8897187f0017773310)">TechZone Lab Access</a></p>
+</div>
+<div class="paragraph">
+<p>We must open a CLI terminal in our workstation machine and sudo to run the
+lab commands as the <code>ROOT</code> user. The workstation has the required ceph client
+RPMs and the CephX admin keys for our deployment so that
+we can run most of the necessary commands for this lab from the workstation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ sudo -i
+# ceph -s
+  cluster:
+    id:     09f357c6-b8d6-11ef-bbb7-02009a7a348a
+    health: HEALTH_OK
+
+  services:
+    mon: 4 daemons, quorum ceph-node1-675b5683b75e66c49dc8f254,ceph-node2-675b5683b75e66c49dc8f254,ceph-node3-675b5683b75e66c49dc8f254,ceph-node4-675b5683b75e66c49dc8f254 (age 9h)
+    mgr: ceph-node1-675b5683b75e66c49dc8f254.vadpyr(active, since 9h), standbys: ceph-node2-675b5683b75e66c49dc8f254.yuzazl
+    mds: 1/1 daemons up, 1 standby
+    osd: 12 osds: 12 up (since 9h), 12 in (since 9h)
+    rgw: 1 daemon active (1 hosts, 1 zones)
+
+  data:
+    volumes: 1/1 healthy
+    pools:   9 pools, 465 pgs
+    objects: 250 objects, 456 KiB
+    usage:   856 MiB used, 119 GiB / 120 GiB avail
+    pgs:     465 active+clean
+
+  io:
+    client:   85 B/s rd, 0 op/s rd, 0 op/s wr</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_breaking_our_ceph_cluster"><a class="anchor" href="#_breaking_our_ceph_cluster"></a>3. Breaking our Ceph Cluster</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To intentionally break the environment for troubleshooting purposes, we will
+execute an ansible playbook designed to simulate real life issues in our
+healthy cluster.</p>
+</div>
+<div class="paragraph">
+<p>We will use the <code>nohup</code> command, which allows the playbook to run in the background independently of the terminal session. Ensure you execute these commands from the workstation as root:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ sudo -i
+# nohup bash -c "ansible-playbook /root/scripts/break_and_fix1.yaml | tee -a /root/ansible.log" &amp;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can monitor the progress of the playbook by checking the Ansible log. When the log reaches the task with the message:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">TASK [Don't stop this playbook; leave it running during the session]*</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Ansible playbook has completed its initial setup, and you can proceed to
+the next steps, you can also check the logs of the playbook using the
+/root/ansible.log file, here is an example of the output of the file when it
+has finished the ansible playbook run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># tail -f /root/ansible.log
+TASK [Break and fix operation 2] ***********************************************
+changed: [localhost]
+...
+TASK [Don't stop this playbook; leave it running during the session] ***********</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From the same terminal or in a new one, we can investigate the current status
+of our cluster, its quite a mess, lets take a closer look:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph -s
+  cluster:
+    id:     09f357c6-b8d6-11ef-bbb7-02009a7a348a
+    health: HEALTH_WARN
+            Failed to apply 1 service(s): nvmeof.rbd
+            Failed to place 1 daemon(s)
+            2 failed cephadm daemon(s)
+            1 filesystem is degraded
+            1 MDSs report slow metadata IOs
+            3 osds down
+            Reduced data availability: 63 pgs inactive
+            Degraded data redundancy: 236/814 objects degraded (28.993%), 47 pgs degraded, 309 pgs undersized
+
+  services:
+    mon: 4 daemons, quorum ceph-node1-675b5683b75e66c49dc8f254,ceph-node2-675b5683b75e66c49dc8f254,ceph-node3-675b5683b75e66c49dc8f254,ceph-node4-675b5683b75e66c49dc8f254 (age 9h)
+    mgr: ceph-node1-675b5683b75e66c49dc8f254.vadpyr(active, since 9h), standbys: ceph-node2-675b5683b75e66c49dc8f254.yuzazl
+    mds: 1/1 daemons up, 1 standby
+    osd: 12 osds: 9 up (since 102s), 12 in (since 9h)
+
+  data:
+    volumes: 0/1 healthy, 1 recovering
+    pools:   9 pools, 465 pgs
+    objects: 256 objects, 457 KiB
+    usage:   882 MiB used, 119 GiB / 120 GiB avail
+    pgs:     13.548% pgs not active
+             236/814 objects degraded (28.993%)
+             209 active+undersized
+             156 active+clean
+             53  undersized+peered
+             37  active+undersized+degraded
+             10  undersized+degraded+peered
+
+  io:
+    client:   85 B/s rd, 23 KiB/s wr, 0 op/s rd, 23 op/s wr</code></pre>
+</div>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>From this point forward, the guide will help you fix the issues one by one. <strong>We recommend that you first try resolving the cluster problems on your own.</strong> If you get stuck, refer to this guide for assistance.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_let_the_fun_begin_fixing_our_cluster_issues"><a class="anchor" href="#_let_the_fun_begin_fixing_our_cluster_issues"></a>4. Let the Fun Begin, Fixing our cluster issues:</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>We are going to work our way up from the Core fixing the issues one by one, so we will
+begin with the OSDs, we can see from the <code>ceph -s</code> health reports that <code>3 osds down</code> are
+marked down, and we have <code>63 pgs inactive</code>. As you already know
+inactive PGs are a big issue as they are not accessible to the clients and IO
+will freeze or error out when trying to access those PGs for reads or writes</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+It&#8217;s vital to notice that the 3 OSDs are <code>DOWN</code> but not <code>OUT</code> as you
+can see from this line of output in the ceph -s command, where 12 osds are
+still in the cluster although only 9 are up <code>osd: 12 osds: 9 up (since 102s), 12 in (since 9h)</code>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Why is this important? As you already know, Ceph/Rados won&#8217;t take action and
+start the recovery of the data for the failed OSDs until the OSDs are declared
+DOWN + OUT, the time it takes for an OSD to be declared out is configurable with the
+config parameter <code>mon_osd_down_out_interval</code> by default set to 10 minutes.
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Important Ceph config parameters related to OSDs being DOWN, OUT.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Parameter</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">osd_heartbeat_grace</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies the time (in seconds) that an OSD will wait for heartbeats from its peers before considering them down. The default is typically 20 seconds.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mon_osd_down_out_interval</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Determines the time (in seconds) the monitor waits after an OSD is marked down before marking it out. This allows the cluster to begin data rebalancing. The default is usually 600 seconds (10 minutes).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mon_osd_min_down_reporters</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sets the minimum number of OSDs that must report another OSD as down before the monitor marks it down. This helps prevent false positives due to network glitches.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mon_osd_report_timeout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The time (in seconds) after which the monitor will mark an OSD as down if it hasn&#8217;t received any reports from it.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">mon_osd_down_out_subtree_limit</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Sets the CRUSH subtree level (failure domain) at which the monitors will avoid marking OSDs as down or out if they become unreachable.</p></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Let’s get a <code>ceph health detail</code> output to have a deeper look into the issues we are facing</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph health detail | grep osd
+HEALTH_WARN Failed to apply 1 service(s): nvmeof.rbd; Failed to place 1 daemon(s); 2 failed cephadm daemon(s); 1 filesystem is degraded; 1 MDSs report slow metadata IOs; 3 osds down; Reduced data availability: 63 pgs inactive; Degraded data redundancy: 236/814 objects degraded (28.993%), 47 pgs degraded, 309 pgs undersized
+    daemon osd.1 on ceph-node1-675b5683b75e66c49dc8f254 is in error state
+[WRN] OSD_DOWN: 3 osds down
+    osd.1 (root=default,host=ceph-node1-675b5683b75e66c49dc8f254) is down
+    osd.0 (root=default,host=ceph-node2-675b5683b75e66c49dc8f254) is down
+    osd.11 (root=default,host=ceph-node3-675b5683b75e66c49dc8f254) is down
+
+# ceph osd tree
+ID  CLASS  WEIGHT   TYPE NAME                                     STATUS  REWEIGHT  PRI-AFF
+-1         0.11755  root default
+-5         0.02939      host ceph-node1-675beb1fb75e66c49dc8f35b
+ 1    hdd  0.00980          osd.1                                   down   1.00000  1.00000
+ 3    hdd  0.00980          osd.3                                     up   1.00000  1.00000
+ 5    hdd  0.00980          osd.5                                     up   1.00000  1.00000
+-3         0.02939      host ceph-node2-675beb1fb75e66c49dc8f35b
+ 0    hdd  0.00980          osd.0                                   down   1.00000  1.00000
+ 2    hdd  0.00980          osd.2                                     up   1.00000  1.00000
+ 4    hdd  0.00980          osd.4                                     up   1.00000  1.00000
+-7         0.02939      host ceph-node3-675beb1fb75e66c49dc8f35b
+ 6    hdd  0.00980          osd.6                                     up   1.00000  1.00000
+ 8    hdd  0.00980          osd.8                                     up   1.00000  1.00000
+10    hdd  0.00980          osd.10                                    up   1.00000  1.00000
+-9         0.02939      host ceph-node4-675beb1fb75e66c49dc8f35b
+ 7    hdd  0.00980          osd.7                                     up   1.00000  1.00000
+ 9    hdd  0.00980          osd.9                                     up   1.00000  1.00000
+11    hdd  0.00980          osd.11                                  down   1.00000  1.00000</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If we check the PG status, we can see that we have PGs in an inactive state. This situation occurs because they have a single OSD in the acting set. Our pool is configured with a replication size of 3 and a minimum size (min_size) of 2 copies. Once the available copies for a PG drop below the min_size (2 in this case), the cluster will stop client I/O to ensure data consistency and integrity.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph pg dump pgs_brief | grep -v active
+dumped pgs_brief
+PG_STAT  STATE                       UP          UP_PRIMARY  ACTING      ACTING_PRIMARY
+3.f7              undersized+peered         [2]           0         [2]               0
+3.f6              undersized+peered         [4]           4         [4]               4
+3.d1              undersized+peered         [5]           0         [5]               0
+3.ae              undersized+peered         [2]           2         [2]               2
+3.ab              undersized+peered         [7]           0         [7]               0</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output shows PGs in an undersized+peered state, indicating that these PGs have fewer replicas than the configured size. In other words, the cluster does not have the required number of OSDs actively participating in replication. Although the PGs are peered (the cluster knows which OSDs should hold the data), they remain undersized because not all required OSDs are up and running.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd pool ls detail | grep 'pool 3'
+pool 3 'cephfs.cephfs.data' replicated size 3 min_size 2 crush_rule 0 object_hash rjenkins pg_num 256 pgp_num 256 autoscale_mode on last_change 84 lfor 0/0/78 flags hashpspool,bulk stripe_width 0 application cephfs read_balance_score 1.60</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This confirms that the pool has a size of 3 and min_size of 2. When the number of available replicas falls below 2, client I/O stops on those PGs.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph pg map 3.f7
+osdmap e205 pg 3.f7 (3.f7) -&gt; up [3] acting [3]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This shows that PG 3.f7 is currently mapped to OSD 3 both in the up and acting sets. Because it’s a single OSD, it’s undersized for a replication size of 3. The PG is operational on that single OSD, but it cannot serve client I/O because it does not meet the minimum required replicas.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+you can get a detailed status of a specific PG using the query command <code># ceph pg 3.f7 query</code>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Here is a table with the most important PG states that can help you understand the differences:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">State</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">active+clean</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PG is active and all data replicas are synchronized. Indicates a healthy state; data is fully replicated and accessible.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">active+degraded</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PG is active but missing one or more replicas. Data is accessible, but redundancy is reduced; recovery is needed to restore replicas.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">active+undersized</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PG has fewer OSDs in its acting set than the replication size. The cluster cannot maintain the desired replication level; there is a potential risk if additional failures occur.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">active+undersized+degraded</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A combination of undersized and degraded states. The PG lacks sufficient replicas and some data is not fully replicated; immediate attention is required.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">active+recovering</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PG is actively recovering missing or outdated replicas. Data redundancy is being restored; cluster performance may be impacted during recovery.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">active+recovery_wait</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PG is waiting to start the recovery process. Recovery is pending, possibly due to resource constraints or configuration limits.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">peering</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">PG is determining the authoritative OSDs for data. This occurs during startup or after topology changes; it is a temporary state before becoming active.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>For more details, see the <a href="https://docs.ceph.com/en/reef/rados/operations/pg-states/">Ceph PG States Documentation</a>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_fixing_issue_number_1"><a class="anchor" href="#_fixing_issue_number_1"></a>4.1. Fixing Issue Number 1</h3>
+<div class="paragraph">
+<p>Let&#8217;s assess the status of the 3 OSDs that are down <code>osd.1 osd.3 osd.11</code>, let&#8217;s
+check with <code>ceph orch</code> the status of the daemons:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ps | grep osd | grep -v running
+osd.1                                                    ceph-node1-675b5683b75e66c49dc8f254                    error            5m ago   9h        -    4096M  &lt;unknown&gt;         &lt;unknown&gt;     &lt;unknown&gt;
+osd.0                                                    ceph-node2-675b5683b75e66c49dc8f254                    stopped          5m ago   9h        -    4096M  &lt;unknown&gt;         &lt;unknown&gt;     &lt;unknown&gt;
+osd.11                                                   ceph-node3-675b5683b75e66c49dc8f254                    stopped          6m ago   9h        -    2610M  &lt;unknown&gt;         &lt;unknown&gt;     &lt;unknown&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From this output, <code>osd.1</code> is in an error state, and <code>osd.0</code> and <code>osd.11</code> are stopped. If OSDs that should hold replicas are down or stopped, the PGs relying on them become undersized and possibly inactive for client I/O.</p>
+</div>
+<div class="paragraph">
+<p>If the OSDs were stopped accidentally or due to a recent issue, we can try to restart them using <code>ceph orch</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch daemon start osd.0
+Scheduled to start osd.0 on host 'ceph-node2-675beb1fb75e66c49dc8f35b'
+# ceph orch daemon start osd.11
+Scheduled to start osd.11 on host 'ceph-node4-675beb1fb75e66c49dc8f35b'
+
+# ceph orch ps | grep -E '(osd.11|osd.0)'
+osd.0                                                    ceph-node2-675beb1fb75e66c49dc8f35b                    running (3m)      3m ago  18m    12.0M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  fa5d359d92e4
+osd.11                                                   ceph-node4-675beb1fb75e66c49dc8f35b                    running (3m)      3m ago  17m    12.2M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  7c4c2b5ae479</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Although we are not using it in this lab, you can avoid data movement during maintenance periods using the following flags
+</td>
+</tr>
+</table>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 16.6666%;">
+<col style="width: 16.6666%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3335%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Flag</th>
+<th class="tableblock halign-left valign-top">Command</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+<th class="tableblock halign-left valign-top">Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">noout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"># ceph osd set noout</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prevents OSDs from being marked "out" if they go down.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use during short-term maintenance to avoid rebalancing and data movement.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">norebalance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"># ceph osd set norebalance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Stops automatic data rebalancing across OSDs.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use during cluster maintenance to prevent background rebalancing, which can impact performance.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">nobackfill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"># ceph osd set nobackfill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Prevents backfill operations when OSDs are added or come back online.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use when adding new nodes or reintroducing OSDs to control and delay backfilling until ready.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">norecover</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"># ceph osd set norecover</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Disables recovery operations for degraded placement groups.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set temporarily during critical maintenance to minimize load, especially if recovery impacts I/O.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Let’s check for inactive PGs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph pg dump_stuck inactive
+ok</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>It’s looking a bit better, there are currently no inactive PGs in the cluster so clients can access data without issues, if we check with ceph osd tree, <code>osd.1</code> is still down.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd tree
+ID  CLASS  WEIGHT   TYPE NAME                                     STATUS  REWEIGHT  PRI-AFF
+-1         0.11755  root default
+-5         0.02939      host ceph-node1-675beb1fb75e66c49dc8f35b
+ 1    hdd  0.00980          osd.1                                   down         0  1.00000
+ 3    hdd  0.00980          osd.3                                     up   1.00000  1.00000
+ 5    hdd  0.00980          osd.5                                     up   1.00000  1.00000
+-3         0.02939      host ceph-node2-675beb1fb75e66c49dc8f35b
+ 0    hdd  0.00980          osd.0                                     up   1.00000  1.00000
+ 2    hdd  0.00980          osd.2                                     up   1.00000  1.00000
+ 4    hdd  0.00980          osd.4                                     up   1.00000  1.00000
+-7         0.02939      host ceph-node3-675beb1fb75e66c49dc8f35b
+ 6    hdd  0.00980          osd.6                                     up   1.00000  1.00000
+ 8    hdd  0.00980          osd.8                                     up   1.00000  1.00000
+10    hdd  0.00980          osd.10                                    up   1.00000  1.00000
+-9         0.02939      host ceph-node4-675beb1fb75e66c49dc8f35b
+ 7    hdd  0.00980          osd.7                                     up   1.00000  1.00000
+ 9    hdd  0.00980          osd.9                                     up   1.00000  1.00000
+11    hdd  0.00980          osd.11                                    up   1.00000  1.00000</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let’s try to restart <code>osd.1</code> just to check if this can be a quick fix to get it working again</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch daemon restart osd.1
+Scheduled to restart osd.1 on host 'ceph-node1-675beb1fb75e66c49dc8f35b'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If we do a refresh of the cephadm cache to just to be sure we have the latest information:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ps --refresh &gt; /dev/null  &amp;&amp; ceph orch ps | grep osd.1
+osd.1                                                    ceph-node1-675beb1fb75e66c49dc8f35b                    unknown          11s ago  22m        -    4096M  &lt;unknown&gt;         &lt;unknown&gt;     &lt;unknown&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So <code>osd.1</code>  is not starting. It remains in an unknown state, at this point, osd.1 has
+been declared down and out of the cluster, so the data has been copied, so
+fixing this OSD is not a priority at the moment.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fixing_issue_number_2"><a class="anchor" href="#_fixing_issue_number_2"></a>4.2. Fixing Issue Number 2</h3>
+<div class="paragraph">
+<p>If we check the PG status, we still have undersized PGs; they are active, but
+showing undersized+degraded</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph pg dump_stuck
+PG_STAT  STATE                       UP          UP_PRIMARY  ACTING      ACTING_PRIMARY
+2.8               active+undersized   [9,8,0,5]           9   [9,8,0,5]               9
+2.9               active+undersized  [4,9,10,3]           4  [4,9,10,3]               4
+2.a               active+undersized   [6,4,7,3]           6   [6,4,7,3]               6
+2.c      active+undersized+degraded   [6,0,7,5]           6   [6,0,7,5]               6
+2.3      active+undersized+degraded  [11,5,8,4]          11  [11,5,8,4]              11
+2.d      active+undersized+degraded  [10,9,2,5]          10  [10,9,2,5]              10
+2.0      active+undersized+degraded   [3,6,0,7]           3   [3,6,0,7]               3
+2.e      active+undersized+degraded   [2,8,9,5]           2   [2,8,9,5]               2
+2.2               active+undersized   [5,4,7,6]           5   [5,4,7,6]               5
+2.f      active+undersized+degraded   [8,9,3,0]           8   [8,9,3,0]               8
+2.1               active+undersized   [7,0,6,3]           7   [7,0,6,3]               7
+2.7      active+undersized+degraded   [3,7,2,8]           3   [3,7,2,8]               3
+2.6      active+undersized+degraded  [2,6,11,3]           2  [2,6,11,3]               2
+2.5      active+undersized+degraded   [8,4,7,5]           8   [8,4,7,5]               8
+2.4      active+undersized+degraded  [2,10,9,3]           2  [2,10,9,3]               2
+2.b      active+undersized+degraded  [8,5,11,4]           8  [8,5,11,4]               8</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To determine why a PG (Placement Group) is undersized, you need to understand
+what that state means in the context of Ceph. An “undersized” PG indicates that
+it does not have the whole number of replica copies that the pool requires. In
+other words, the cluster cannot currently meet the configured replication or
+erasure coding requirements for that PG set by the pool.</p>
+</div>
+<div class="paragraph">
+<p>If you take a look at all the <code>undersized</code> PGs they all belong to the same pool, the pool ID
+is the first number of the <code>PG ID</code>, so its <code>POOLID.PGNUM</code>, in this case, the pool ID
+is 2, let&#8217;s go ahead and check what is the replication schema configuration
+For this pool, it seems also strange that we have 4 OSDs listed for each PG in the <code>UP</code> section of the output.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd pool ls detail | grep "pool 2"
+pool 2 'cephfs.cephfs.meta' replicated size 5 min_size 3 crush_rule 0 object_hash rjenkins pg_num 16 pgp_num 16 autoscale_mode on last_change 198 lfor 0/0/47 flags hashpspool stripe_width 0 pg_autoscale_bias 4 pg_num_min 16 recovery_priority 5 application cephfs read_balance_score 2.24</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ok! so here is the issue, someone has set by mistake a replication scheme of 5,
+so the pool requires five copies of the data, this is not possible in our cluster
+because our failure domain for the pool is set to host, and we only have four
+nodes in the cluster, so our maximum replication factor can only be 4:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd crush rule list
+replicated_rule
+# ceph osd crush rule dump replicated_rule
+{
+    "rule_id": 0,
+    "rule_name": "replicated_rule",
+    "type": 1,
+    "steps": [
+        {
+            "op": "take",
+            "item": -1,
+            "item_name": "default"
+        },
+        {
+            "op": "chooseleaf_firstn",
+            "num": 0,
+            "type": "host"
+        },
+        {
+            "op": "emit"
+        }
+    ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s set the size and min_size to a count of 3 and 2.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd pool set cephfs.cephfs.meta size 3
+set pool 2 size to 3
+# ceph osd pool set cephfs.cephfs.meta min_size 2
+set pool 2 min_size to 2</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Once we have change the replication schema values for the pool you can see that all our PGs are <code>active+clean</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph pg dump_stuck
+ok
+# ceph -s | grep pgs
+    pools:   9 pools, 465 pgs
+    pgs:     465 active+clean</code></pre>
+</div>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+High-level differences between the Recovery, Backfill, and Rebalance processes
+</td>
+</tr>
+</table>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 11.1111%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 22.2223%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Operation</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Trigger</th>
+<th class="tableblock halign-left valign-top">Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Recovery</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process of restoring missing or outdated replicas to achieve the desired redundancy.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Triggered when OSDs fail, go down, or become unreachable, causing some placement groups (PGs) to lose replicas.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Can impact I/O performance due to additional read/write operations as the cluster replicates data to restore full redundancy.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Backfill</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The process of populating new or returned OSDs with the appropriate data to achieve a balanced data distribution.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Triggered when new OSDs are added, or previously failed OSDs come back online after being marked "out."</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Can cause higher I/O load as data is moved to the OSDs that need to be filled, potentially impacting client I/O performance temporarily.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Rebalance</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The redistribution of data across OSDs to maintain an even utilization and performance profile throughout the cluster.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Triggered by changes in cluster topology (e.g., adding or removing OSDs, changing CRUSH map rules) that affect the data placement.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Generates additional data movement that can temporarily reduce performance, but ultimately aims for a more balanced and efficient cluster.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_fixing_issue_number_3"><a class="anchor" href="#_fixing_issue_number_3"></a>4.3. Fixing Issue Number 3</h3>
+<div class="paragraph">
+<p>Ok, our PGs are back to active clean; now let&#8217;s go back to OSD.1 and see if we
+can fix it, our cluster&#8217;s current state</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph health detail
+HEALTH_WARN Failed to apply 1 service(s): nvmeof.rbd; 3 failed cephadm daemon(s)
+[WRN] CEPHADM_APPLY_SPEC_FAIL: Failed to apply 1 service(s): nvmeof.rbd
+    nvmeof.rbd: Cannot find pool "rbd" for service nvmeof.rbd
+[WRN] CEPHADM_FAILED_DAEMON: 3 failed cephadm daemon(s)
+    daemon osd.1 on ceph-node1-675beb1fb75e66c49dc8f35b is in error state
+    daemon rgw.objectgw.ceph-node2-675beb1fb75e66c49dc8f35b.cvkhtd on ceph-node2-675beb1fb75e66c49dc8f35b is in error state
+    daemon nvmeof.rbd.ceph-node3-675beb1fb75e66c49dc8f35b.qdxrlt on ceph-node3-675beb1fb75e66c49dc8f35b is in error state</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s check the container startup logs for the OSD using the cephadm command,
+the <code>cephadm logs</code> command needs to be checked from the node where the OSD is running,
+another way to get on what node a specific OSD is running</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd find osd.1 | grep host
+    "host": "ceph-node1-675beb1fb75e66c49dc8f35b",
+        "host": "ceph-node1-675beb1fb75e66c49dc8f35b",</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We ssh into the ceph-node1</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ssh ceph-node1-675beb1fb75e66c49dc8f35b</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Use the cephadm command to check the container startup logs, looking for the error or bad strings, in the hope we get some valuable info.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cephadm logs --name osd.1 | grep -iE '(error|bad)'
+Inferring fsid 759da2cc-b92d-11ef-bc4f-020012356cc9
+Dec 13 08:57:11 ceph-node1-675beb1fb75e66c49dc8f35b ceph-759da2cc-b92d-11ef-bc4f-020012356cc9-osd-1[41399]: 2024-12-13T08:57:11.304+0000 7fcdcf7b2640 -1 monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]
+Dec 13 08:57:11 ceph-node1-675beb1fb75e66c49dc8f35b ceph-osd[41404]: monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]
+Dec 13 08:57:11 ceph-node1-675beb1fb75e66c49dc8f35b ceph-759da2cc-b92d-11ef-bc4f-020012356cc9-osd-1[41399]: 2024-12-13T08:57:11.304+0000 7fcdce7b0640 -1 monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]
+Dec 13 08:57:11 ceph-node1-675beb1fb75e66c49dc8f35b ceph-osd[41404]: monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]
+Dec 13 08:57:11 ceph-node1-675beb1fb75e66c49dc8f35b ceph-759da2cc-b92d-11ef-bc4f-020012356cc9-osd-1[41399]: 2024-12-13T08:57:11.305+0000 7fcdcefb1640 -1 monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]
+Dec 13 08:57:11 ceph-node1-675beb1fb75e66c49dc8f35b ceph-osd[41404]: monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]
+Dec 13 08:57:24 ceph-node1-675beb1fb75e66c49dc8f35b ceph-759da2cc-b92d-11ef-bc4f-020012356cc9-osd-1[41765]: 2024-12-13T08:57:24.284+0000 7f36996e7640 -1 monclient(hunting): handle_auth_bad_method server allowed_methods [2] but i only support [2]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From the message <code>handle_auth_bad_method server allowed_methods [2] but i only
+support [2]</code> it seems there is an issue with the <code>cephx</code> authentication from the
+OSD to the monitor</p>
+</div>
+<div class="paragraph">
+<p>Ceph uses a system called “cephx” to securely identify and allow access to different parts of the cluster, like OSDs or monitors.
+Each OSD has its own "cephx key" that it uses to prove who it is.
+The monitors (mons) check this key to ensure the OSD is authorized to join the cluster.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+For more information about CephX authentication, see the <a href="https://www.ibm.com/docs/en/storage-ceph/8.0?topic=components-ceph-authentication">Ceph Authentication Documentation</a>.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s check if the OSD and Monitor Key entry for OSD.1 Match. From ceph-node1</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cat /var/lib/ceph/759da2cc-b92d-11ef-bc4f-020012356cc9/osd.1/keyring
+[osd.1]
+key = AQAD9VtnDcUOCRAAWKicP9ok/Z/BM7CGbSzDug==</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now let&#8217;s check the MON keyring information; I exit ceph-node1 and go back to the workstation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph auth ls | grep osd.1
+osd.10
+osd.11</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As you can see from the output, there is no key entry for OSD 1!!, it’s missing, this is the
+reason why the OSD.1 daemon/service is not starting. We could try and
+re-create/distribute the keys, but let&#8217;s be pragmatic. All our PGs are active
+even if undersized, and the data from OSD.1 has been copied through recovery to other OSDs once
+it was declared out of the cluster, so let&#8217;s move forward, and just recreate OSD.1, at this point it&#8217;s safe and the fastest way to get it back online again.</p>
+</div>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In a Ceph cluster, each Object Storage Daemon (OSD) has its own dedicated directory to store data and metadata. This directory is essential for understanding how Ceph manages its storage backend.
+The OSD directory is typically found in the /var/lib/ceph/osd/ path. Each directory is named based on the OSD ID assigned by the cluster.</p>
+</div>
+<div class="paragraph">
+<p>Important files in the OSD dir:
+<strong>block:</strong> A symbolic link pointing to the block device used by BlueStore.
+<strong>ceph_fsid:</strong> Contains the unique identifier (UUID) for the Ceph cluster. This UUID matches the one displayed by the ceph -s command.
+<strong>keyring:</strong> Stores the authentication key for the OSD to communicate with the monitor daemons (MONs).
+<strong>kv_backend:</strong> Indicates the key-value store used, such as RocksDB, which manages metadata like object-to-disk mappings.
+<strong>unit.</strong>: Files related with the systemd unit and the starting of the OSD service</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Before we delete the OSD, let&#8217;s get some information, like the underlying media
+it&#8217;s using, here are three different ways to achieve the information.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph device ls | grep osd.1
+07a7-402873cd-5da3-4  ceph-node3-675bf708cc0dca378231ef22:vdf  osd.10
+07a7-8024e374-6e0b-4  ceph-node1-675bf708cc0dca378231ef22:vdd  osd.1
+07a7-d972df4e-6cc1-4  ceph-node4-675bf708cc0dca378231ef22:vdf  osd.11
+
+# ceph osd metadata 1 | grep device
+    "bluefs_single_shared_device": "1",
+    "bluestore_bdev_devices": "vdd",
+    "default_device_class": "hdd",
+    "device_ids": "vdd=07a7-8024e374-6e0b-4",
+    "device_paths": "vdd=/dev/disk/by-path/pci-0000:00:09.0",
+    "devices": "vdd",
+
+# ceph orch device ls | grep vdd
+ceph-node1-67628e99e82f4213d363447b  /dev/vdd  hdd   02d7-b81fcb20-fd60-4  10.0G  No         30m ago    Has a FileSystem, Insufficient space (&lt;10 extents) on vgs, LVM detected</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So the device is named vdd in ceph-node1, and we can double-check that cephadm
+uses LVM with the OSD, so it creates a PV/VG/LV per OSD; this is the simple
+an example, where we have all our bluestore components, Data(block),
+DB(block.db) and WAL(block.wal) in a single device, as you know, the DB and WAL can be on a diffent device, like for
+example NVMe flash media devices to improve performance.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ssh ceph-node1 lsblk | grep -C 2 vdd
+vdb                                                                                                   252:16   0   396K  0 disk
+vdc                                                                                                   252:32   0    44K  0 disk
+vdd                                                                                                   252:48   0    10G  0 disk
+└─ceph--925a4ac8--c3d7--4c85--8167--ec7293f1c1e8-osd--block--bfad4c45--836b--4652--a37d--ee6d1d809f42 253:0    0    10G  0 lvm
+
+# ssh ceph-node1 "pvs ; vgs ; lvs"
+  PV         VG                                        Fmt  Attr PSize   PFree
+  /dev/vdd   ceph-925a4ac8-c3d7-4c85-8167-ec7293f1c1e8 lvm2 a--  &lt;10.00g    0
+  /dev/vde   ceph-4c55e01c-3ad1-4f7d-aa5c-28faf080cc06 lvm2 a--  &lt;10.00g    0
+  /dev/vdf   ceph-7404dc47-dc52-4953-8448-d218e37e4ac7 lvm2 a--  &lt;10.00g    0
+  VG                                        #PV #LV #SN Attr   VSize   VFree
+  ceph-4c55e01c-3ad1-4f7d-aa5c-28faf080cc06   1   1   0 wz--n- &lt;10.00g    0
+  ceph-7404dc47-dc52-4953-8448-d218e37e4ac7   1   1   0 wz--n- &lt;10.00g    0
+  ceph-925a4ac8-c3d7-4c85-8167-ec7293f1c1e8   1   1   0 wz--n- &lt;10.00g    0
+  LV                                             VG                                        Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert
+  osd-block-e5395b87-01f9-49e3-a7e0-88c4c10a55dc ceph-4c55e01c-3ad1-4f7d-aa5c-28faf080cc06 -wi-ao---- &lt;10.00g
+  osd-block-f37ad217-4750-492d-b819-4284d1ee0127 ceph-7404dc47-dc52-4953-8448-d218e37e4ac7 -wi-ao---- &lt;10.00g
+  osd-block-bfad4c45-836b-4652-a37d-ee6d1d809f42 ceph-925a4ac8-c3d7-4c85-8167-ec7293f1c1e8 -wi-a----- &lt;10.00g</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We will now remove the device using the cephadm orchestration for OSD removal
+that makes the procedure straightforward, we use <code>ceph orch osd rm OSD.ID</code> we
+are adding the <code>--zap</code> option, so cephadm takes care of zapping the disks
+during the remove(removing all data and headers from the disk)</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch osd rm 1 --zap
+
+# ceph orch osd rm status
+OSD  HOST                                 STATE                    PGS  REPLACE  FORCE  ZAP   DRAIN STARTED AT
+1    ceph-node1-675bf708cc0dca378231ef22  done, waiting for purge    0  False    False  True
+
+# ceph orch osd rm status
+No OSD remove/replace operations reported</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+If you don&#8217;t add the <code>--zap</code> option, the OSD won&#8217;t be automatically added
+back to the system, and you will need to run the <code>ceph orch device zap</code> command
+to be able to re-use the drive as an OSD.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>OSD 1 should get automatically re-configured into the cluster because we have
+our OSD spec configured to do so, we can check with <code>ceph orch ls osd --export</code>
+we can see that in the spec for the section <code>data_devices</code>, we have the filter
+<code>all: true</code> This means that cephadm will use all drives available to a max
+<code>limit: 3</code> because we have zapped our OSD.1 it will show as available again to
+cephadm and will re-deploy it</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ls osd
+NAME                       PORTS  RUNNING  REFRESHED  AGE  PLACEMENT
+osd.all-available-devices              12  5m ago     4h   label:osd
+
+# ceph orch ls osd --export
+service_type: osd
+service_id: all-available-devices
+service_name: osd.all-available-devices
+placement:
+  label: osd
+spec:
+  data_devices:
+    all: true
+    limit: 3
+  filter_logic: AND
+  objectstore: bluestore</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After a couple of minutes, I have all the OSDs up and runnin,g including osd.1
+that has been re-deployed for us:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ps --daemon-type osd
+NAME    HOST                                 PORTS  STATUS         REFRESHED  AGE  MEM USE  MEM LIM  VERSION           IMAGE ID      CONTAINER ID
+osd.0   ceph-node2-67628e99e82f4213d363447b         running (18m)     7m ago   4h    95.1M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  4f9162246477
+osd.1   ceph-node1-67628e99e82f4213d363447b         running (5m)      4m ago   5m    83.5M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  3cf13170ac67
+osd.2   ceph-node2-67628e99e82f4213d363447b         running (4h)      7m ago   4h    97.2M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  8e8326515a9b
+osd.3   ceph-node1-67628e99e82f4213d363447b         running (4h)      4m ago   4h     111M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  71fc5a8c2eaa
+osd.4   ceph-node2-67628e99e82f4213d363447b         running (4h)      7m ago   4h    97.1M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  050e2b9d13e5
+osd.5   ceph-node1-67628e99e82f4213d363447b         running (4h)      4m ago   4h     100M    4096M  18.2.1-262.el9cp  1a4ea7f62a89  4267d34f6897
+osd.6   ceph-node3-67628e99e82f4213d363447b         running (4h)      8s ago   4h    93.4M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  e6c64bde0a2c
+osd.7   ceph-node4-67628e99e82f4213d363447b         running (4h)      8m ago   4h     104M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  a9e6de957ef8
+osd.8   ceph-node3-67628e99e82f4213d363447b         running (4h)      8s ago   4h    98.0M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  ee49762f6aa3
+osd.9   ceph-node4-67628e99e82f4213d363447b         running (4h)      8m ago   4h    90.5M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  0a64463ece4d
+osd.10  ceph-node3-67628e99e82f4213d363447b         running (17m)     8s ago   4h    98.2M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  8cb27ac2f89f
+osd.11  ceph-node4-67628e99e82f4213d363447b         running (4h)      8m ago   4h    94.8M    2269M  18.2.1-262.el9cp  1a4ea7f62a89  7fffb9ce1638
+
+# ceph osd tree | grep -B 2 osd.1
+-1         0.11755  root default
+-5         0.02939      host ceph-node1-67628e99e82f4213d363447b
+ 1    hdd  0.00980          osd.1                                     up   1.00000  1.00000</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All osds are up and in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph -s | grep osd
+    osd: 12 osds: 12 up (since 7m), 12 in (since 7m)</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fixing_issue_number_4"><a class="anchor" href="#_fixing_issue_number_4"></a>4.4. Fixing Issue Number 4</h3>
+<div class="paragraph">
+<p>With all OSDs fixed, we can move to our next issue, let&#8217;s see what problems we
+have in the cluster</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph health detail
+HEALTH_WARN Failed to apply 1 service(s): nvmeof.rbd; 2 failed cephadm daemon(s)
+[WRN] CEPHADM_APPLY_SPEC_FAIL: Failed to apply 1 service(s): nvmeof.rbd
+    nvmeof.rbd: Cannot find pool "rbd" for service nvmeof.rbd
+[WRN] CEPHADM_FAILED_DAEMON: 2 failed cephadm daemon(s)
+    daemon rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo on ceph-node2-67628e99e82f4213d363447b is in error state
+    daemon nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl on ceph-node3-67628e99e82f4213d363447b is in error state</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s look at the RGW Object GW issue: <code>daemon rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo on ceph-node2-67628e99e82f4213d363447b is in error state</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ps | grep rgw
+rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo  ceph-node2-67628e99e82f4213d363447b  *:8080            error             2m ago   4h        -        -  &lt;unknown&gt;         &lt;unknown&gt;     &lt;unknown&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>As the container is not starting, we will need to jump into the node where it&#8217;s
+trying to start and failing and take a look at the logs for this kind of
+an error where the container doesn&#8217;t start and the systemd unit is failing; it&#8217;s a
+It is a good idea to start by using the <code>cephadm logs --name</code> command; the name has to
+be the name of the daemon running on the node in our example
+<code>rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo`</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ssh ceph-node2
+
+# cephadm logs --name  rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b systemd[1]: Started Ceph rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo for c52a9792-bd23-11ef-bd85-0200f67a348a.
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: deferred set uid:gid to 167:167 (ceph:ceph)
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: ceph version 18.2.1-262.el9cp (4857b2aad4c3aaa8ff58e0b60396fa6ab731f9ff) reef (stable), process radosgw, pid 2
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: framework: beast
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: framework conf key: port, val: 8080
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: init_numa not setting numa affinity
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: rgw main: ERROR: could not find zone (nozone)
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: rgw main: ERROR: failed to start notify service ((2) No such file or directory
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: rgw main: ERROR: failed to init services (ret=(2) No such file or directory)
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b ceph-c52a9792-bd23-11ef-bd85-0200f67a348a-rgw-objectgw-ceph-node2-67628e99e82f4213d363447b-gsisdo[85098]: 2024-12-18T13:42:02.461+0000 7f97ca526880 -1 Couldn't init storage provider (RAD&gt;
+Dec 18 13:42:02 ceph-node2-67628e99e82f4213d363447b radosgw[85102]: Couldn't init storage provider (RADOS)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ok so we need to have basic knowled of the Object Gateway to understand the
+error, but basically we can see that it&#8217;s not able to find a zone called
+<code>nozone</code>, snippet: <code>rgw main: ERROR: could not find zone (nozone)</code> , when the
+RGW service starts is going to look certain pools that are start with the name
+of the zone:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd lspools | grep rgw
+6 .rgw.root
+7 default.rgw.log
+8 default.rgw.control
+9 default.rgw.meta</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, in the previous output, the name of our zone would be <code>default</code>; the problem
+that we see in the logs and why the RGW service is not starting because
+the RGW thinks he belongs to the <code>nozone</code> zone instead of <code>default</code>, so when it
+tries to go and find the pools required to start with a name like
+<code>nozone.rgw.log</code>, for example,RGW can&#8217;t find the pools required and fails with the error
+<code>radosgw[85102]: Couldn&#8217;t init storage provider (RADOS)</code>,</p>
+</div>
+<div class="paragraph">
+<p>So first we need to check in the ceph config for the RGW service what zone is configured:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph config dump | grep rgw
+client.rgw                                                                                                advanced  rgw_zone                               nozone                                                                                                      *
+client.rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo                                            basic     rgw_frontends                          beast port=8080                                                                                             *</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ok, so here is the issue, someone by mistake has configured all RGW services that
+start with client.rgw to be part of the <code>nozone</code> zone; we need to change it to
+default:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph config set client.rgw rgw_zone default
+# ceph config get client.rgw rgw_zone
+default</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Let&#8217;s restart the RGW service so it uses the new zone we have configured.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch daemon restart rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo
+Scheduled to restart rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo on host 'ceph-node2-67628e99e82f4213d363447b'
+# ceph orch ps --daemon-type rgw
+NAME                                                     HOST                                 PORTS   STATUS         REFRESHED  AGE  MEM USE  MEM LIM  VERSION           IMAGE ID      CONTAINER ID
+rgw.objectgw.ceph-node2-67628e99e82f4213d363447b.gsisdo  ceph-node2-67628e99e82f4213d363447b  *:8080  running (19s)    14s ago   6h    75.7M        -  18.2.1-262.el9cp  1a4ea7f62a89  adf293824acc
+# ceph -s | grep rgw
+    rgw: 1 daemon active (1 hosts, 1 zones)
+# curl http://ceph-node2-67628e99e82f4213d363447b:8080
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;ListAllMyBucketsResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/"&gt;&lt;Owner&gt;&lt;ID&gt;anonymous&lt;/ID&gt;&lt;DisplayName&gt;&lt;/DisplayName&gt;&lt;/Owner&gt;&lt;Buckets&gt;&lt;/Buckets&gt;&lt;/ListAllMyBucketsResult&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fixing_issue_number_5"><a class="anchor" href="#_fixing_issue_number_5"></a>4.5. Fixing Issue Number 5</h3>
+<div class="paragraph">
+<p>Great! another problem is fixed, let&#8217;s see what else we have</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph health detail
+HEALTH_WARN Failed to apply 1 service(s): nvmeof.rbd; 1 failed cephadm daemon(s)
+[WRN] CEPHADM_APPLY_SPEC_FAIL: Failed to apply 1 service(s): nvmeof.rbd
+    nvmeof.rbd: Cannot find pool "rbd" for service nvmeof.rbd
+[WRN] CEPHADM_FAILED_DAEMON: 1 failed cephadm daemon(s)
+    daemon nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl on ceph-node3-67628e99e82f4213d363447b is in error state</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The first error seems straightforward forward thanks <code>ceph health</code> for giving us such
+a clear error message</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd lspools
+1 rbdpool
+2 cephfs.cephfs.meta
+3 cephfs.cephfs.data
+4 .nfs
+5 .mgr
+6 .rgw.root
+7 default.rgw.log
+8 default.rgw.control
+9 default.rgw.meta</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So we have a pool called <code>rbdpool</code> but not a pool named <code>rbd</code>, our NVMeoF
+service seems to be configured with the <code>rbd</code> pool as the default, let&#8217;s check:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ls nvmeof --export | grep pool
+  pool: rbd</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ok so this is the culprit, let&#8217;s create the <code>rbd</code> pool it&#8217;s looking for</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph osd pool create rbd 32 32 replicated
+pool 'rbd' created
+# ceph osd pool application enable rbd rbd</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can give the ceph health detail command a couple of minutes to refresh and
+remove the pool error</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph health detail
+[WRN] CEPHADM_FAILED_DAEMON: 1 failed cephadm daemon(s)
+    daemon nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl on ceph-node3-67628e99e82f4213d363447b is in error state</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fixing_issue_number_6"><a class="anchor" href="#_fixing_issue_number_6"></a>4.6. Fixing Issue Number 6</h3>
+<div class="paragraph">
+<p>Great!, we only have one WARNING left!</p>
+</div>
+<div class="paragraph">
+<p><code>daemon nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl on ceph-node3-67628e99e82f4213d363447b is in error state</code> , here I will proceed in the same way, ssh into  eph-node3 and check the container startup logs</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ssh ceph-node3
+
+# cephadm logs --name nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl
+....
+[1]: ceph-c52a9792-bd23-11ef-bd85-0200f67a348a@nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl.service: Scheduled restart job, restart counter is at 3.
+[1]: Stopped Ceph nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl for c52a9792-bd23-11ef-bd85-0200f67a348a.
+[1]: Starting Ceph nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl for c52a9792-bd23-11ef-bd85-0200f67a348a...
+186]: Trying to pull cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:8-8-8-8-8...
+186]: Error: initializing source docker://cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:8-8-8-8-8: reading manifest 8-8-8-8-8 in cp.icr.io/cp/ibm-ceph/nvmeof-rhel9: manifest unknown
+[1]: ceph-c52a9792-bd23-11ef-bd85-0200f67a348a@nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl.service: Control process exited, code=exited, status=125/n/a</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Ok, so the container startup is complaining that it can&#8217;t find the image
+<code>cp.icr.io/cp/ibm-ceph/nvmeof-rhel9</code> with tag <code>8-8-8-8-8</code> in the IBM container
+registry <code>Error: initializing source
+docker://cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:8-8-8-8-8: reading manifest
+8-8-8-8-8 in cp.icr.io/cp/ibm-ceph/nvmeof-rhel9: manifest unknow</code> this for sure
+is a strange tag; let&#8217;s check the systemd unit run script and see if the tag is
+there, the long string after <code>/var/lib/ceph</code> is the <code>FSID</code> of the cluster so you
+will need to replace it with the one in your deployment/TZ Lab:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cat /var/lib/ceph/c52a9792-bd23-11ef-bd85-0200f67a348a/nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl/unit.run | grep nvmeof-rhel9
+/bin/podman run --rm --ipc=host --stop-signal=SIGTERM --authfile=/etc/ceph/podman-auth.json --net=host --init --name ceph-c52a9792-bd23-11ef-bd85-0200f67a348a-nvmeof-rbd-ceph-node3-67628e99e82f4213d363447b-vuvzfl --pids-limit=-1 --ulimit memlock=-1:-1 --ulimit nofile=10240 --cap-add=SYS_ADMIN --cap-add=CAP_SYS_NICE -d --log-driver journald --conmon-pidfile /run/ceph-c52a9792-bd23-11ef-bd85-0200f67a348a@nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl.service-pid --cidfile /run/ceph-c52a9792-bd23-11ef-bd85-0200f67a348a@nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl.service-cid --cgroups=split -e CONTAINER_IMAGE=cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:8-8-8-8-8 -e NODE_NAME=ceph-node3-67628e99e82f4213d363447b -e CEPH_USE_RANDOM_NONCE=1 -v /var/lib/ceph/c52a9792-bd23-11ef-bd85-0200f67a348a/nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl/config:/etc/ceph/ceph.conf:z -v /var/lib/ceph/c52a9792-bd23-11ef-bd85-0200f67a348a/nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl/keyring:/etc/ceph/keyring:z -v /var/lib/ceph/c52a9792-bd23-11ef-bd85-0200f67a348a/nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl/ceph-nvmeof.conf:/remote-source/ceph-nvmeof/app/ceph-nvmeof.conf:z -v /var/lib/ceph/c52a9792-bd23-11ef-bd85-0200f67a348a/nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl/configfs:/sys/kernel/config -v /dev/hugepages:/dev/hugepages -v /dev/vfio/vfio:/dev/vfio/vfio -v /var/log/ceph/c52a9792-bd23-11ef-bd85-0200f67a348a:/var/log/ceph:z -v /etc/hosts:/etc/hosts:ro --mount type=bind,source=/lib/modules,destination=/lib/modules,ro=true cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:8-8-8-8-8</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So we have confirmed it&#8217;s using the tag: 8-8-8-8-8, but let&#8217;s verify the available tag options in the IBM
+Registry for this image. Back to the workstation node, I&#8217;m going to use the container registry credentials our running ceph cluster to authenticate with podman on the CLI, so I’m able to connect to the IBM registry and query all available tags using <code>podman search --list-tags</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph config-key ls | grep registry
+    "mgr/cephadm/registry_credentials",
+
+# ceph config-key get mgr/cephadm/registry_credentials | jq .
+{
+  "url": "cp.icr.io/cp",
+  "username": "cp",
+  "password": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJJQk0gTWFya2V0cGxhY2UiLCJpYXQiOjE2NDMyOTExOTYsImp0aSI6ImE5MGY3NmMyMDI2NDRlMTViYmY5MWQxNjYxZWZlNTFjIn0.TjEwd_i-K7R21p60z16qIVIWW8ltVaso4QND-ICmJA0"
+}
+
+# podman login cp.icr.io/cp -u cp -p "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJJQk0gTWFya2V0cGxhY2UiLCJpYXQiOjE2NDMyOTExOTYsImp0aSI6ImE5MGY3NmMyMDI2NDRlMTViYmY5MWQxNjYxZWZlNTFjIn0.TjEwd_i-K7R21p60z16qIVIWW8ltVaso4QND-ICmJA0"
+Login Succeeded!
+
+# podman search --list-tags docker://cp.icr.io/cp/ibm-ceph/nvmeof-rhel9
+NAME                                TAG
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  0.0.5-12
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  0.0.5-3
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  0.0.5-8
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.2.13-4
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.2.16-27
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.2.16-8
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.2
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.3.3-10
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.3.3-14
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  1.3
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9  latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>So, as we can see 8-8-8-8-8 doesn&#8217;t exist. This must be a mistake. Let&#8217;s change
+the ceph config for the NVMeoF image and use the <code>latest</code> tag</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph config-key get config/mgr/mgr/cephadm/container_image_nvmeof
+cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:8-8-8-8-8
+# ceph config-key set config/mgr/mgr/cephadm/container_image_nvmeof cp.icr.io/cp/ibm-ceph/nvmeof-rhel9:latest</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We need to remove/delete the daemon so that cephadm will re-create the systemd unit
+that starts the container with the right image tag</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch daemon rm nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl
+Removed nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.vuvzfl from host 'ceph-node3-67628e99e82f4213d363447b'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If we wait for a couple of minutes, we will see how the nvmeof.rbd service we
+have configured will create a new NVMeoF daemon/service, and this time it will
+start without any issue as it&#8217;s using the right container image tag</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph orch ps --daemon-type nvmeof
+NAME                                                   HOST                                 PORTS             STATUS         REFRESHED  AGE  MEM USE  MEM LIM  VERSION  IMAGE ID      CONTAINER ID
+nvmeof.rbd.ceph-node3-67628e99e82f4213d363447b.niyxvx ceph-node3-67628e99e82f4213d363447b  *:5500,4420,8009  running (1m)     5m ago  79m    96.2M        -           86f83f6d8efb  353e94898694</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Excelent job!!! with this final fix we have arrived at the end of the workshop,
+Finally with the health of our cluster: <code>HEALTH_OK</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ceph health detail
+HEALTH_OK</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <a class="navbar-item" href="https://www.redhat.com/en/technologies/cloud-computing/openshift-container-storage" target="_blank">
+      <img src="../_/img/header_logo.svg" alt="Ceph">
+  </a>
+</footer>
+<script id="site-script" src="../_/js/site.js" data-ui-root-path="../_"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

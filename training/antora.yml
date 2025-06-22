@@ -1,0 +1,5 @@
+name: training
+title: Tech-Zone IBM Storage
+version: master
+nav:
+  - modules/ROOT/nav.adoc

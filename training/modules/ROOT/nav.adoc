@@ -1,0 +1,2 @@
+.Troubleshooting Workshop
+* xref:lake.adoc[IBM Storage Ceph ZeroTrust DataLakehouse ]

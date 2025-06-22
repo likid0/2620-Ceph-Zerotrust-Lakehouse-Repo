@@ -1,0 +1,47 @@
+[.title-highlight]
+Welcome to the IBM Storage Ceph ZeroTrust LakeHouse
+
+The IBM Storage Ceph Troubleshooting workshop is an in-depth Ceph
+enablement that strives to provide you with a good understanding of the Core Ceph
+Concepts & Architecture, The content of the workshop is a technical Hands-on  Break and Fix Lab.
+
+== Recommended Pre-Requisites before starting the enablement. 
+
+Before completing this course, there are some previous Tech-Zone Labs that we
+would recommend doing first; here is the list of Storage Ceph training available in Tech-Zone
+We would recommend completing the following before starting this enablement:
+. https://techzone.ibm.com/my/reservations/create/6567862cba056800175b6279[Install and Configure a Ceph Cluster] : Learn to set up a robust IBM Storage Ceph environment from scratch and deploy the Object Storage service using the Dashboard.
+. https://techzone.ibm.com/my/reservations/create/66c880e5eff555001e6e3582[Explore Advanced Object Storage Features] : Dive deep into SSL configuration, bucket policies, audit logs, Storage Class Tiering, and lifecycle management to enhance the security and efficiency of your object storage.
+. https://techzone.ibm.com/my/reservations/create/66c882763c41c8001e807f3c[Experience Unified Storage] : Gain hands-on experience with Ceph’s unified storage capabilities, including Block (RBD), File (NFS), and Object (S3), showcasing its versatility as an all-in-one storage solution.
+These labs demonstrate how IBM Storage Ceph can meet diverse enterprise storage needs, providing a scalable, secure, and unified storage solution. By mastering the deployment and management of block, file, and object storage within a single platform, organizations can streamline their storage infrastructure, improve operational efficiency, and reduce costs while ensuring data availability and integrity across various workloads.
+
+Also the following resources can be very handy if you feel a bit lost with the tasks asked in the Lab!: 
+
+. https://www.youtube.com/watch?v=PmLPbrf-x9g[Ceph Introduction by Sage]
+. https://www.redbooks.ibm.com/redpieces/pdfs/redp5721.pdf[IBM Storage Ceph Concepts and Architecture Guide Redbook]
+
+== Looking for support during the enablement?
+
+Any questions related to the training can be asked on the `#ceph-help` channel on the `IBM Storage` workspace.
+
+== Start the Lab!!
+[IMPORTANT]
+====
+The estimated time needed to go through the workshop is 90 minutes
+====
+
+Start the IBM Storage Ceph ZeroTrust LakeHouse Lab and access the course material directly by clicking below:
+[.btn.btn-primary]
+xref:lake.adoc[IBM Storage Ceph ZeroTrust LakeHouse - Start the Course Now!]
+
+== Other interesting Links
+. IBM Storage Ceph website: link:https://www.ibm.com/products/ceph[Visit here]
+. IBM Storage Ceph documentation: link:http://docs.ceph.blue[View documentation]
+. IBM Storage Ceph video demos: link:http://easy.ceph.blue[Watch demos]
+. IBM Redbooks. IBM Storage Ceph Solutions Guide: https://www.redbooks.ibm.com/redpieces/pdfs/redp5715.pdf[Read Redbook] 
+
+
+[IMPORTANT]
+====
+This Enablement is not IBM official documentation for Ceph. For the official documentation, please see https://www.ibm.com/docs/en/storage-ceph/8
+====
