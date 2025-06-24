@@ -3,9 +3,12 @@
 USER_HOME=$(cat /etc/passwd | grep ^U | cut -d: -f6)
 USER=$(cat /etc/passwd | grep ^U | cut -d: -f1)
 mkdir /root/scripts
+mkdir /root/terraform
 mkdir /root/docs
 mkdir $USER_HOME/docs
 cp ./deploy_cluster.sh /root/scripts
+cp -pr ./Lakehouse/ceph /root/terraform
+cp -pr 
 cp -pr ./build /root/docs
 cp -pr ./build $USER_HOME/docs
 chown -R $USER:$USER $USER_HOME/docs
@@ -83,9 +86,14 @@ ssh ceph-node${SERVER} "systemctl unmask rpcbind.socket ; systemctl unmask rpcbi
 done
 
 # Copy Ceph admin keys to workstation
-curl https://public.dhe.ibm.com/ibmdl/export/pub/storage/ceph/ibm-storage-ceph-7-rhel-9.repo | sudo tee /etc/yum.repos.d/ibm-storage-ceph-8-rhel-9.repo
+curl https://public.dhe.ibm.com/ibmdl/export/pub/storage/ceph/ibm-storage-ceph-8-rhel-9.repo | sudo tee /etc/yum.repos.d/ibm-storage-ceph-8-rhel-9.repo
 dnf install ceph-common -y
 scp -pr ceph-node1:/etc/ceph/ /etc/
+pip install awscli
+aws configure set aws_access_key_id demo --profile polaris-root
+aws configure set aws_secret_access_key demo --profile polaris-root
+aws configure set endpoint_url http://ceph-node2 --profile polaris-root
+aws configure set region default --profile polaris-root
 sleep 120
 ceph config-key get mgr/cephadm/registry_credentials | jq . > /root/scripts/registry.json
 scp /root/scripts/registry.json root@ceph-node1:/root/scripts

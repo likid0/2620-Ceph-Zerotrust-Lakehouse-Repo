@@ -14,7 +14,6 @@ hostname: ceph-node1-$uid
 labels:
   - mon
   - osd
-  - rgw
   - mds
 ---
 
@@ -62,7 +61,7 @@ placement:
   count: 1
   label: "rgw"
 spec:
-  rgw_frontend_port: 8080
+  rgw_frontend_port: 80
 EOF
 
 # Apply the configuration using cephadm
