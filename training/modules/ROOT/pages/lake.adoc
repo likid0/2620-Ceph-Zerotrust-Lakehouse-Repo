@@ -127,14 +127,265 @@ $ sudo -i
 == Creating the required S3 IAM Account and Root Account User
 
 === Creating the IAM Account
+radosgw-admin account create --account-name=analytics
 === Creating the Root User for the IAM Account
+radosgw-admin user create --uid=analytics_root --display-name=root_analytics_user --account-id=RGW59183818904979875 --account-root  --access-key=demo --secret-key=demo
+=== Creating the `polarisdemo` bucket
+aws --profile polaris-root s3 mb s3://polarisdemo
 === Verification
+
 
 == Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources
 
+Before we launch Spark, Trino, or Polaris we need a secure *landing zone* inside Ceph’s Object Gateway (RGW).
+Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in **Terraform**—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.
+
+=== Why automate this step?
+
+* **Consistency & repeatability** – Everyone in the team provisions the *exact* same resources , every time, with a single command.
+* **Idempotence** – Running `terraform apply` tomorrow makes zero changes unless you changed the code.
+* **Auditability** – All security-sensitive artifacts (bucket names, IAM policies, ARNs) can live in Git—no tribal knowledge locked in a UI click-path.
+
+=== What the code does
+[%header,cols="25,~"]
+|===
+| Block | Purpose
+
+| *Variables (`*.tf` `variable` blocks)*
+| Collect user-specific inputs such as the Ceph S3/STS endpoint, the credentials profile that can talk to RGW, and the bucket name that will back the Polaris catalog.
+
+| *AWS provider configured for Ceph*
+| Uses the standard `hashicorp/aws` provider but points its `s3`, `sts`, and `iam` endpoints to your Ceph cluster, and forces path-style S3 URLs so they work with RGW.
+
+| *Bucket (data or resource)*
+| Looks up—or optionally creates—the S3 bucket named in `var.bucket_name`.  The code is written with `data "aws_s3_bucket"` so it *reads* an already-provisioned bucket, but you can uncomment the `resource "aws_s3_bucket"` block to have Terraform create it instead.
+
+| *IAM user `polaris/catalog/admin`*
+| Creates a programmatic user that owns the catalog. Terraform outputs its *access key* and *secret key* so the next module (Polaris) can authenticate.
+
+| *IAM role `polaris/catalog/client`*
+| A role that the polaris catalogs assumes via `sts:AssumeRole` to vend a token
+to the Query Engine(Spark, Trino) asking for access to a Table. It contains a single inline policy (`catalog_client_policy`) granting **only** `s3:*` on your warehouse bucket.  Principle of least privilege in action.
+
+| *Outputs*
+| After `terraform apply` you get:
+  * `bucket_arn` – ARN of the warehouse bucket
+  * `account_arn` – Ceph pseudo-account ID (used in later trust policies)
+  * `location` – `s3://…` URI Polaris will register as its warehouse
+  * `role_arn` – ARN of the client role
+  * `admin_access_key` / `admin_secret_key` – keys for the admin user (the secret is marked *sensitive* so Terraform hides it in plan logs)
+|===
+
+
 === Modify Variables
+The Ceph Terraform Variables file we need to edit is located in our desktop
+machine at `/root/terraform/ceph` with the name `terraform.tfvars`.
+
+You only need to modify the RGW Account ID to match te Account ID you created
+on your LAB Environment, the rest of the variables are already filled in for
+you.
+
+from the CLI you can get your Account ID with:
+
+```
+# radosgw-admin account list
+[
+    "RGW59183818904979875"
+]
+```
+
+Then edit the /root/terraform/ceph/terraform.tfvars and modify the Account ID
+
+# cat terraform.tfvars
+# Ceph object-gateway (RGW) HTTPS endpoint, used for S3 **and** STS/IAM calls
+ceph_endpoint       = "http://ceph-node2"
+
+# Where Terraform’s AWS provider will read your access-key/secret-key pair
+credentials_path    = "~/.aws/credentials"
+credentials_profile = "polaris-root"
+
+# Name of the bucket that will become Polaris’ warehouse
+bucket_name         = "polarisdemo"
+
+# The numerical “account ID” that Ceph assigns when you ran `radosgw-admin account create`
+account_arn         = "RGW59183818904979875"  <<----- Modify this one!
+
+# Object-storage URI the Polaris container should treat as its warehouse
+location            = "s3://polarisdemo"
+
+
 === Run Terraform
+With `terraform.tfvars` edited, you are ready to execute the automation.
+All commands below assume you are **already on the lab workstation** and that
+the code lives in `/root/terraform/ceph`.
+
+[NOTE]
+====
+If you have never used Terraform before, think of the workflow as:
+
+. *init* – download plugins and build a `.terraform` working directory
+. *plan* – show what will change (dry‑run)
+. *apply* – make it so (and save state in `terraform.tfstate`)
+====
+
+Open a terminal on the lab workstation and change to the module directory:
+
+[source,bash]
+----
+# cd /root/terraform/ceph
+----
+
+Initialise the working directory (runs once per clone):
+
+[source,bash]
+----
+# terraform init
+----
+
+Terraform downloads the **hashicorp/aws** provider, points it to your Ceph
+endpoints, and prints *“Terraform has been successfully initialized!”* when
+ready.
+
+Preview the changes (optional but recommended):
+
+[source,bash]
+----
+# terraform plan
+----
+
+You should see something like `Plan: 5 to add, 0 to change, 0 to destroy.`
+Nothing is created yet—this is just a dry‑run so you can double‑check the
+bucket name and account ID.
+
+Apply the configuration:
+
+[source,bash]
+----
+# terraform apply
+----
+
+Terraform re‑computes the plan and asks for confirmation.
+Type `yes` (or add `-auto-approve` to skip the prompt) and watch the resources
+appear.
+
+When the run finishes you will see output similar to:
+
+[source,plain]
+----
+Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+account_arn      = "RGW59183818904979875"
+admin_access_key = "POLARISADMINACCESSKEY"
+admin_secret_key = (sensitive value)
+bucket_arn       = "arn:aws:s3:::polarisdemo"
+location         = "s3://polarisdemo"
+role_arn         = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client"
+----
+
+Copy these values—especially `admin_access_key`, `admin_secret_key`,
+`location`, and `role_arn`—into the next Terraform module that provisions
+Polaris.
+
+==== What just happened?
+* A warehouse bucket (`polarisdemo`) was confirmed (or created).
+* An IAM user `polaris/catalog/admin` and its access keys were generated.
+* A least‑privilege IAM role `polaris/catalog/client` with an inline S3 policy
+  was created.
+* Terraform wrote the resource IDs and ARNs to `terraform.tfstate` and echoed
+  the key ones as outputs.
+
 === Verify 
+
+From the terminal we can do a quick verification of the newly created Ceph
+Resources:
+
+Bucket:
+
+----
+# aws --profile polaris-root s3 ls
+2025-06-24 08:57:39 polarisdemo
+----
+
+The User that polaris will use to assume the role:
+
+----
+# aws --profile polaris-root iam list-users
+{
+    "Users": [
+        {
+            "Path": "/polaris/catalog/",
+            "UserName": "admin",
+            "UserId": "a193f75b-3b62-4996-b8a2-5ba89161ddb2",
+            "Arn": "arn:aws:iam::RGW59183818904979875:user/polaris/catalog/admin",
+            "CreateDate": "2025-06-24T10:01:58.283604Z"
+        }
+    ]
+}
+----
+
+The Role that Polaris will assume to get access to the S3 Resources:
+----
+# aws --profile polaris-root iam list-roles
+{
+    "Roles": [
+        {
+            "Path": "/polaris/catalog/",
+            "RoleName": "client",
+            "RoleId": "e8596597-1a55-4a44-9b20-364c0682a3a7",
+            "Arn": "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client",
+            "CreateDate": "2025-06-24T10:01:58.286Z",
+            "AssumeRolePolicyDocument": {
+                "Statement": [
+                    {
+                        "Action": "sts:AssumeRole",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": "arn:aws:iam::RGW59183818904979875:user/polaris/catalog/admin"
+                        }
+                    }
+                ],
+                "Version": "2012-10-17"
+            },
+            "Description": "",
+            "MaxSessionDuration": 3600
+        }
+    ]
+}
+----
+
+The Role Policy that defines what S3 resources that Polaris can Access once it
+assumes the Role:
+
+----
+# aws --profile polaris-root iam list-role-policies --role-name client
+{
+    "PolicyNames": [
+        "catalog_client_policy"
+    ]
+}
+[root@ceph-workstation-685988cc06f597e7ef15b041 ceph]# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
+{
+    "RoleName": "client",
+    "PolicyName": "catalog_client_policy",
+    "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Action": [
+                    "s3:*"
+                ],
+                "Effect": "Allow",
+                "Resource": [
+                    "arn:aws:s3:::polarisdemo/*",
+                    "arn:aws:s3:::polarisdemo"
+                ]
+            }
+        ]
+    }
+}
+----
 
 == Deploy our Demo Analytical Container Stack
 

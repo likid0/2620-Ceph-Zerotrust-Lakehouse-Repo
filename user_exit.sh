@@ -88,6 +88,8 @@ done
 # Copy Ceph admin keys to workstation
 curl https://public.dhe.ibm.com/ibmdl/export/pub/storage/ceph/ibm-storage-ceph-8-rhel-9.repo | sudo tee /etc/yum.repos.d/ibm-storage-ceph-8-rhel-9.repo
 dnf install ceph-common -y
+yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+dnf -y install terraform
 scp -pr ceph-node1:/etc/ceph/ /etc/
 pip install awscli
 aws configure set aws_access_key_id demo --profile polaris-root
