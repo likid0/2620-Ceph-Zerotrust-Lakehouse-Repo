@@ -1,0 +1,6 @@
+product_id,product_name,description,price,category,created_at,updated_at
+1,Widget,A useful widget,10.00,Tools,2025-05-20 09:00:00,2025-05-21 10:00:00
+2,Gadget,An advanced gadget,15.50,Electronics,2025-05-20 10:00:00,2025-05-21 11:00:00
+3,Thingamajig,A versatile thingamajig,7.25,Tools,2025-05-20 11:00:00,2025-05-21 12:00:00
+4,Doohickey,A nifty doohickey,12.75,Hardware,2025-05-20 12:00:00,2025-05-21 13:00:00
+5,Whatsit,An essential whatsit,20.00,Electronics,2025-05-20 13:00:00,2025-05-21 14:00:00

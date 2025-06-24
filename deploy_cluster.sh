@@ -45,11 +45,6 @@ labels:
   - osd
   - nfs
 ---
-service_type: mds
-service_id: cephfs
-placement:
-  label: "mds"
----
 service_type: osd
 service_id: all-available-devices
 service_name: osd.all-available-devices
@@ -68,15 +63,6 @@ placement:
   label: "rgw"
 spec:
   rgw_frontend_port: 8080
----
-service_type: nfs
-service_id: nfsc
-placement:
-  label: "nfs"
-spec:
-  port: 2049
----
-
 EOF
 
 # Apply the configuration using cephadm
@@ -84,13 +70,6 @@ echo "Adding all hosts to the Ceph cluster..."
 ceph orch apply -i "$yaml_file"
 
 ceph config set global mon_max_pg_per_osd 512
-# Create and enable a new RDB block pool.
-ceph osd pool create rbdpool 32 32
-ceph osd pool application enable rbdpool rbd
-
-# Create the CephFS volume.
-ceph fs volume create cephfs 2> /dev/null
-ceph nfs export create cephfs --cluster-id nfsc --pseudo-path /nfs --fsname cephfs 2> /dev/null
 
 echo "All Ceph nodes have been added to the cluster using $yaml_file."
 echo "##################################################################"
