@@ -387,11 +387,47 @@ assumes the Role:
 }
 ----
 
-== Deploy our Demo Analytical Container Stack
+== Deploy the Lab Analytical Container Stack
 
 == Introduction
-== Deployment with Podman Compose
-== Verification
+
+With storage and IAM wiring complete, bring the *analytic tier* online.
+One Podman‑Compose file spins up four services:
+
+* Polaris control‑plane and Iceberg REST catalog
+* Trino worker for ad‑hoc SQL
+* Jupyter Lab for Spark notebooks
+* Superset for dashboards
+
+=== Deployment with Podman Compose using wrapper script
+
+Open a terminal in the repo root and run the following command to start all our
+required services using podman-compose:
+
+[source,bash]
+----
+/root/scripts/demo.sh containers
+----
+
+What happens under the hood:
+
+* The script reads `.compose-aws.env` (written by the Ceph Terraform run) to
+  inject your bucket location, endpoint URL, and temporary credentials.
+* Executes `podman compose up -d`, which downloads or reuses the container
+  images and networks them together, the following container services are
+  started on the workstation:
+
+  ** polaris
+  ** spark
+  ** jupiter
+  ** trino
+  ** superset
+
+* Polls `http://localhost:8182/healthcheck` until Polaris reports *healthy*.
+
+=== Verification
+
+
 
 == Bootstrap a Polaris data catalog via Terraform
 

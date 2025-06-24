@@ -73,3 +73,39 @@ services:
     volumes:
       - ./notebooks:/home/jovyan/work
     container_name: jupiter
+
+  superset:
+    image: docker.io/apache/superset:latest
+    container_name: superset
+    depends_on:
+      - trino                           # waits until Trino is healthy
+    ports:
+      - "8088:8088"
+    env_file: .compose-aws.env          # passes S3 creds if you later add S3 drivers
+    environment:
+      # ‑‑ Mandatory secret for Flask sessions
+      SUPERSET_SECRET_KEY: "oh-so-secret"
+      # ‑‑ Auto‑create the initial admin user on first run
+      ADMIN_USERNAME: "admin"
+      ADMIN_FIRST_NAME: "Admin"
+      ADMIN_LAST_NAME: "User"
+      ADMIN_EMAIL: "admin@example.com"
+      ADMIN_PASSWORD: "admin"           # change in production!
+      # Optional: skip loading example dashboards
+      SUPERSET_LOAD_EXAMPLES: "no"
+    volumes:
+      - superset_home:/app/superset_home
+    command: >
+      /bin/bash -c "
+        superset db upgrade &&
+        superset fab create-admin \
+          --username \$ADMIN_USERNAME \
+          --firstname \$ADMIN_FIRST_NAME \
+          --lastname \$ADMIN_LAST_NAME \
+          --email \$ADMIN_EMAIL \
+          --password \$ADMIN_PASSWORD || true &&
+        superset init &&
+        superset run -h 0.0.0.0 -p 8088
+      "
+volumes:
+  superset_home: {}

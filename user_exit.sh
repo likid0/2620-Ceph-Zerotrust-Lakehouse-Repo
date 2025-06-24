@@ -8,7 +8,8 @@ mkdir /root/docs
 mkdir $USER_HOME/docs
 cp ./deploy_cluster.sh /root/scripts
 cp -pr ./Lakehouse/ceph /root/terraform
-cp -pr 
+cp -pr ./Lakehouse/polaris /root/terraform
+cp -pr ./Lakehouse /root/lakehouse
 cp -pr ./build /root/docs
 cp -pr ./build $USER_HOME/docs
 chown -R $USER:$USER $USER_HOME/docs
@@ -90,6 +91,7 @@ curl https://public.dhe.ibm.com/ibmdl/export/pub/storage/ceph/ibm-storage-ceph-8
 dnf install ceph-common -y
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
 dnf -y install terraform
+dnf install podman.x86_64 podman-compose.noarch podman-docker.noarch podman-plugins.x86_64 -y
 scp -pr ceph-node1:/etc/ceph/ /etc/
 pip install awscli
 aws configure set aws_access_key_id demo --profile polaris-root
