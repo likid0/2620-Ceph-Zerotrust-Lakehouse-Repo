@@ -1,35 +1,31 @@
+##############################################################################
+#  Polaris catalog bootstrap – FreshGoods lab
+###############################################################################
 terraform {
+  required_version = ">= 1.0"
   required_providers {
-    polaris = {
-      source  = "apache/polaris"
-      version = ">= 0.1.0"
-    }
-    external = {
-      source  = "hashicorp/external"
-      version = ">= 2.3.0"
-    }
+    polaris  = { source = "apache/polaris", version = ">= 0.1.0" }
+    external = { source = "hashicorp/external",  version = ">= 2.3.0" }
   }
-  required_version = ">= 0.14.0"
 }
 
+# ------------------------------------------------------------------ provider --
 provider "polaris" {
   host   = var.polaris_host
   scheme = var.polaris_scheme
   port   = var.polaris_port
-  token  = var.auth_token
+  token  = var.auth_token           # root token from bootstrap creds
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Catalog & Namespace
-# ──────────────────────────────────────────────────────────────────────────────
+# ----------------------------------------------------------- catalog & schema --
 resource "polaris_catalog" "prod" {
   name = "prod"
   type = "INTERNAL"
   properties = {
-    "default-base-location" = var.storage_base_location
+    "default-base-location" = var.storage_base_location   # s3://polarisdemo
   }
   storage_config {
-    storage_type     = "S3_COMPATIBLE"
+    storage_type      = "S3_COMPATIBLE"
     allowed_locations = [var.storage_base_location]
     s3_compatible_config {
       role_arn     = var.s3_role_arn
@@ -43,173 +39,108 @@ resource "polaris_catalog" "prod" {
 resource "polaris_namespace" "prod_ns" {
   catalog_name   = polaris_catalog.prod.name
   namespace_path = ["prod_ns"]
-  properties = {
-    description = "Production namespace"
-    owner       = "data-engineering-team"
+  properties     = { owner = "data-eng" }
+  lifecycle {
+      ignore_changes = [properties]
+    }
+}
+
+# ------------------------------------------------------------- four personas --
+locals {
+  personas = {
+    admin      = "Catalog administrator"
+    engineer   = "Data engineer (ingest RAW)"
+    compliance = "Compliance officer (mask PII)"
+    analyst    = "Business analyst (read GOLD)"
   }
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Principals & Principal Roles
-# ──────────────────────────────────────────────────────────────────────────────
-resource "polaris_principal" "alice" {
-  name                         = "Alice"
-  properties                   = { description = "EU data engineer" }
-  credential_rotation_required = false
-}
-output "alice_secret" {
-  value     = polaris_principal.alice.secret
-  sensitive = true
+resource "polaris_principal" "user" {
+  for_each   = local.personas
+  name       = each.key
+  properties = { description = each.value }
 }
 
-resource "polaris_principal" "bob" {
-  name                         = "Bob"
-  properties                   = { description = "US data engineer" }
-  credential_rotation_required = false
-}
-output "bob_secret" {
-  value     = polaris_principal.bob.secret
-  sensitive = true
+resource "polaris_principal_role" "role" {
+  for_each = local.personas
+  name     = "${each.key}_role"
+  properties = { description = "${each.value} role" }
 }
 
-resource "polaris_principal" "charlie" {
-  name                         = "Charlie"
-  properties                   = { description = "Service administrator" }
-  credential_rotation_required = false
-}
-output "charlie_secret" {
-  value     = polaris_principal.charlie.secret
-  sensitive = true
+resource "polaris_principal_role_assignment" "role_bind" {
+  for_each            = local.personas
+  principal_name      = polaris_principal.user[each.key].name
+  principal_role_name = polaris_principal_role.role[each.key].name
 }
 
-resource "polaris_principal_role" "eu_data_eng" {
-  name       = "eu_data_eng"
-  properties = { description = "EU Data Engineering team role" }
-}
-resource "polaris_principal_role" "us_data_eng" {
-  name       = "us_data_eng"
-  properties = { description = "US Data Engineering team role" }
-}
-
-# assign principals to their roles
-resource "polaris_principal_role_assignment" "alice_to_eu_data_eng" {
-  principal_name      = polaris_principal.alice.name
-  principal_role_name = polaris_principal_role.eu_data_eng.name
-}
-resource "polaris_principal_role_assignment" "bob_to_us_data_eng" {
-  principal_name      = polaris_principal.bob.name
-  principal_role_name = polaris_principal_role.us_data_eng.name
-}
-resource "polaris_principal_role_assignment" "charlie_to_service_admin" {
-  principal_name      = polaris_principal.charlie.name
+# admin also inherits the built‑in service_admin role
+resource "polaris_principal_role_assignment" "admin_builtin" {
+  principal_name      = polaris_principal.user["admin"].name
   principal_role_name = "service_admin"
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Catalog Roles
-# ──────────────────────────────────────────────────────────────────────────────
-resource "polaris_catalog_role" "eu_data_admin" {
+# ------------------------------------------------------------ catalog roles --
+resource "polaris_catalog_role" "engineer_raw_rw" {
   catalog_name = polaris_catalog.prod.name
-  name         = "eu_data_admin"
-  properties   = { description = "EU Data Admin for prod" }
+  name         = "engineer_raw_rw"
+  properties   = { description = "RW on products_raw" }
 }
-resource "polaris_catalog_role" "us_data_admin" {
+resource "polaris_catalog_role" "compliance_gold_rw" {
   catalog_name = polaris_catalog.prod.name
-  name         = "us_data_admin"
-  properties   = { description = "US Data Admin for prod" }
+  name         = "compliance_gold_rw"
+  properties   = { description = "RW on products_gold (plus RO on RAW)" }
 }
-
-# New: catalog_reader role for read-all
-resource "polaris_catalog_role" "catalog_reader" {
+resource "polaris_catalog_role" "analyst_gold_ro" {
   catalog_name = polaris_catalog.prod.name
-  name         = "catalog_reader"
-  properties   = { description = "Read-only access to all tables in prod_ns" }
+  name         = "analyst_gold_ro"
+  properties   = { description = "RO on products_gold" }
 }
 
-# New: catalog_writer role for write-specific
-resource "polaris_catalog_role" "catalog_writer" {
-  catalog_name = polaris_catalog.prod.name
-  name         = "catalog_writer"
-  properties   = { description = "Write access on selected tables in prod_ns" }
+# bind principal‑roles → catalog‑roles
+resource "polaris_catalog_role_assignment" "engineer_map" {
+  principal_role_name = polaris_principal_role.role["engineer"].name
+  catalog_name        = polaris_catalog.prod.name
+  catalog_role_name   = polaris_catalog_role.engineer_raw_rw.name
+}
+resource "polaris_catalog_role_assignment" "compliance_map" {
+  principal_role_name = polaris_principal_role.role["compliance"].name
+  catalog_name        = polaris_catalog.prod.name
+  catalog_role_name   = polaris_catalog_role.compliance_gold_rw.name
+}
+resource "polaris_catalog_role_assignment" "analyst_map" {
+  principal_role_name = polaris_principal_role.role["analyst"].name
+  catalog_name        = polaris_catalog.prod.name
+  catalog_role_name   = polaris_catalog_role.analyst_gold_ro.name
 }
 
-# bind principal_roles to catalog_roles
-resource "polaris_catalog_role_assignment" "eu_data_eng_to_eu_data_admin" {
-  principal_role_name = polaris_principal_role.eu_data_eng.name
-  catalog_name        = polaris_catalog.prod.name
-  catalog_role_name   = polaris_catalog_role.eu_data_admin.name
+# -------------------------------------------------------- privilege packages --
+resource "polaris_privilege_package" "table_ro" {
+  name        = "TABLE_RO"
+  description = "Read data + metadata"
+  privileges  = ["TABLE_READ_PROPERTIES", "TABLE_READ_DATA"]
 }
-resource "polaris_catalog_role_assignment" "us_data_eng_to_us_data_admin" {
-  principal_role_name = polaris_principal_role.us_data_eng.name
-  catalog_name        = polaris_catalog.prod.name
-  catalog_role_name   = polaris_catalog_role.us_data_admin.name
-}
-resource "polaris_catalog_role_assignment" "service_admin_to_catalog_admin" {
-  principal_role_name = "service_admin"
-  catalog_name        = polaris_catalog.prod.name
-  catalog_role_name   = "catalog_admin"
-}
-# New assignment: service_admin → reader
-resource "polaris_catalog_role_assignment" "service_admin_to_catalog_reader" {
-  principal_role_name = "service_admin"
-  catalog_name        = polaris_catalog.prod.name
-  catalog_role_name   = polaris_catalog_role.catalog_reader.name
-}
-# Existing or updated assignment: service_admin → writer
-resource "polaris_catalog_role_assignment" "service_admin_to_catalog_writer" {
-  principal_role_name = "service_admin"
-  catalog_name        = polaris_catalog.prod.name
-  catalog_role_name   = polaris_catalog_role.catalog_writer.name
+resource "polaris_privilege_package" "table_rw" {
+  name        = "TABLE_RW"
+  description = "Read and write data"
+  privileges  = ["TABLE_READ_DATA", "TABLE_WRITE_DATA"]
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Privilege Packages
-# ──────────────────────────────────────────────────────────────────────────────
-resource "polaris_privilege_package" "table_reader" {
-  name       = "TABLE_READER"
-  description = "Basic table read access"
-  privileges = [
-    "TABLE_READ_PROPERTIES",
-    "TABLE_READ_DATA"
-  ]
-}
-resource "polaris_privilege_package" "table_writer" {
-  name        = "TABLE_WRITER"
-  description = "Table read and write access"
-  privileges  = [
-    "TABLE_READ_DATA",
-    "TABLE_WRITE_DATA"
-  ]
-}
-resource "polaris_privilege_package" "table_owner" {
-  name        = "TABLE_OWNER"
-  description = "Full table ownership"
-  privileges  = [
-    "TABLE_FULL_METADATA",
-    "TABLE_READ_DATA",
-    "TABLE_WRITE_DATA"
-  ]
-}
-resource "polaris_privilege_package" "principal_admin" {
-  name        = "PRINCIPAL_ADMIN"
-  description = "Ability to rotate any principal’s credentials"
-  privileges  = ["PRINCIPAL_ROTATE_CREDENTIALS"]
-}
-
-# ──────────────────────────────────────────────────────────────────────────────
-# Iceberg Tables
-# ──────────────────────────────────────────────────────────────────────────────
-resource "polaris_table" "products" {
-  depends_on    = [polaris_namespace.prod_ns]
-  catalog_name  = polaris_catalog.prod.name
+# ------------------------------------------------------------- Iceberg tables --
+# RAW – mirrors the 200‑row CSV exactly
+# ───────────── RAW table ──────────────────────────────────────────────────────
+resource "polaris_table" "products_raw" {
+  depends_on     = [polaris_namespace.prod_ns]
+  catalog_name   = polaris_catalog.prod.name
   namespace_path = ["prod_ns"]
-  name          = "products"
+  name           = "products_raw"
+
   schema {
     type = "struct"
+
     fields {
       id       = 1
       name     = "product_id"
-      type     = "long"
+      type     = "string"
       required = true
     }
     fields {
@@ -220,9 +151,9 @@ resource "polaris_table" "products" {
     }
     fields {
       id       = 3
-      name     = "description"
+      name     = "category"
       type     = "string"
-      required = false
+      required = true
     }
     fields {
       id       = 4
@@ -232,240 +163,146 @@ resource "polaris_table" "products" {
     }
     fields {
       id       = 5
-      name     = "category"
-      type     = "string"
-      required = false
+      name     = "quantity"
+      type     = "int"
+      required = true
     }
     fields {
       id       = 6
-      name     = "created_at"
-      type     = "timestamp"
+      name     = "email"
+      type     = "string"
       required = true
     }
     fields {
       id       = 7
-      name     = "updated_at"
+      name     = "timestamp"
       type     = "timestamp"
-      required = false
+      required = true
     }
   }
-  properties = {
-    "write.format.default"            = "parquet"
-    "write.parquet.compression-codec" = "snappy"
-  }
+
+  properties = { "format-version" = "2" }
 }
 
-resource "polaris_table" "eu_users" {
-  depends_on = [polaris_namespace.prod_ns]
+# ───────────── GOLD table ─────────────────────────────────────────────────────
+resource "polaris_table" "products_gold" {
+  depends_on     = [polaris_namespace.prod_ns]
   catalog_name   = polaris_catalog.prod.name
   namespace_path = ["prod_ns"]
-  name           = "eu_user"  # Using the exact name from the SQL
+  name           = "products_gold"
 
   schema {
     type = "struct"
+
     fields {
       id       = 1
-      name     = "user_id"
-      type     = "long"
+      name     = "product_id"
+      type     = "string"
       required = true
     }
     fields {
       id       = 2
-      name     = "username"
+      name     = "product_name"
       type     = "string"
       required = true
     }
     fields {
       id       = 3
-      name     = "email"
+      name     = "category"
       type     = "string"
       required = true
     }
     fields {
       id       = 4
-      name     = "country"
-      type     = "string"
+      name     = "total"
+      type     = "decimal(12,2)"
       required = true
     }
     fields {
       id       = 5
-      name     = "registration_date"
-      type     = "timestamp"
+      name     = "email_hash"
+      type     = "string"
       required = true
     }
     fields {
       id       = 6
-      name     = "last_login"
-      type     = "timestamp"
-      required = false
-    }
-  }
-
-  properties = {
-    "write.format.default" = "parquet"
-    "write.parquet.compression-codec" = "snappy"
-  }
-}
-
-resource "polaris_table" "us_users" {
-  depends_on = [polaris_namespace.prod_ns]
-  catalog_name   = polaris_catalog.prod.name
-  namespace_path = ["prod_ns"]
-  name           = "us_user"  # Using the exact name from the SQL
-
-  schema {
-    type = "struct"
-    fields {
-      id       = 1
-      name     = "user_id"
-      type     = "long"
-      required = true
-    }
-    fields {
-      id       = 2
-      name     = "username"
-      type     = "string"
-      required = true
-    }
-    fields {
-      id       = 3
-      name     = "email"
-      type     = "string"
-      required = true
-    }
-    fields {
-      id       = 4
-      name     = "state"
-      type     = "string"
-      required = true
-    }
-    fields {
-      id       = 5
-      name     = "registration_date"
+      name     = "timestamp"
       type     = "timestamp"
       required = true
     }
-    fields {
-      id       = 6
-      name     = "last_login"
-      type     = "timestamp"
-      required = false
-    }
   }
 
-  properties = {
-    "write.format.default" = "parquet"
-    "write.parquet.compression-codec" = "snappy"
-  }
+  properties = { "format-version" = "2" }
 }
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Grant Packages to Catalog Roles
-# ──────────────────────────────────────────────────────────────────────────────
-# EU data admin grants
-resource "polaris_grant_package" "eu_data_admin_eu_users" {
+# ----------------------------------------------------------- table privileges --
+# Engineer – RW on RAW
+resource "polaris_grant_package" "raw_rw_for_engineer" {
   catalog_name      = polaris_catalog.prod.name
-  role_name         = polaris_catalog_role.eu_data_admin.name
+  role_name         = polaris_catalog_role.engineer_raw_rw.name
   type              = "table"
   namespace         = ["prod_ns"]
-  table_name        = polaris_table.eu_users.name
-  privilege_package = polaris_privilege_package.table_writer.name
-  depends_on        = [polaris_table.eu_users]
-}
-resource "polaris_grant_package" "eu_data_admin_products" {
-  catalog_name      = polaris_catalog.prod.name
-  role_name         = polaris_catalog_role.eu_data_admin.name
-  type              = "table"
-  namespace         = ["prod_ns"]
-  table_name        = polaris_table.products.name
-  privilege_package = polaris_privilege_package.table_reader.name
-  depends_on        = [polaris_table.products]
+  table_name        = polaris_table.products_raw.name
+  privilege_package = polaris_privilege_package.table_rw.name
 }
 
-# US data admin grants
-resource "polaris_grant_package" "us_data_admin_us_users" {
+# Compliance – RO on RAW, RW on GOLD
+resource "polaris_grant_package" "raw_ro_for_compliance" {
   catalog_name      = polaris_catalog.prod.name
-  role_name         = polaris_catalog_role.us_data_admin.name
+  role_name         = polaris_catalog_role.compliance_gold_rw.name
   type              = "table"
   namespace         = ["prod_ns"]
-  table_name        = polaris_table.us_users.name
-  privilege_package = polaris_privilege_package.table_writer.name
-  depends_on        = [polaris_table.us_users]
+  table_name        = polaris_table.products_raw.name
+  privilege_package = polaris_privilege_package.table_ro.name
 }
-resource "polaris_grant_package" "us_data_admin_products" {
+resource "polaris_grant_package" "gold_rw_for_compliance" {
   catalog_name      = polaris_catalog.prod.name
-  role_name         = polaris_catalog_role.us_data_admin.name
+  role_name         = polaris_catalog_role.compliance_gold_rw.name
   type              = "table"
   namespace         = ["prod_ns"]
-  table_name        = polaris_table.products.name
-  privilege_package = polaris_privilege_package.table_reader.name
-  depends_on        = [polaris_table.products]
+  table_name        = polaris_table.products_gold.name
+  privilege_package = polaris_privilege_package.table_rw.name
 }
 
-# New: catalog_reader namespace-level read
-resource "polaris_grant_package" "catalog_reader_prod_ns" {
+# Analyst – RO on GOLD
+resource "polaris_grant_package" "gold_ro_for_analyst" {
   catalog_name      = polaris_catalog.prod.name
-  role_name         = polaris_catalog_role.catalog_reader.name
-  type              = "namespace"
-  namespace         = ["prod_ns"]
-  privilege_package = polaris_privilege_package.table_reader.name
-  depends_on        = [polaris_namespace.prod_ns]
-}
-
-# New: catalog_writer table-level write (for products)
-resource "polaris_grant_package" "catalog_writer_products" {
-  catalog_name      = polaris_catalog.prod.name
-  role_name         = polaris_catalog_role.catalog_writer.name
+  role_name         = polaris_catalog_role.analyst_gold_ro.name
   type              = "table"
   namespace         = ["prod_ns"]
-  table_name        = polaris_table.products.name
-  privilege_package = polaris_privilege_package.table_writer.name
-  depends_on        = [polaris_table.products]
+  table_name        = polaris_table.products_gold.name
+  privilege_package = polaris_privilege_package.table_ro.name
 }
 
-# ──────────────────────────────────────────────────────────────────────────────
-# External data blocks (token minting)
-# ──────────────────────────────────────────────────────────────────────────────
-data "external" "alice_token" {
-  program = [
+# ----------------------------------------------------- token minting (outputs) --
+data "external" "token" {
+  for_each = local.personas
+  program  = [
     "${path.module}/scripts/fetch_token.sh",
-    polaris_principal.alice.name,
-    polaris_principal.alice.secret,
-    "PRINCIPAL_ROLE:${polaris_principal_role.eu_data_eng.name}"
+    polaris_principal.user[each.key].name,
+    polaris_principal.user[each.key].secret,
+    "PRINCIPAL_ROLE:${polaris_principal_role.role[each.key].name}"
   ]
-  depends_on = [polaris_principal_role_assignment.alice_to_eu_data_eng]
 }
-output "alice_token" {
-  value     = data.external.alice_token.result.access_token
+
+output "admin_token" {
+  value     = data.external.token["admin"].result.access_token
   sensitive = true
 }
 
-data "external" "bob_token" {
-  program = [
-    "${path.module}/scripts/fetch_token.sh",
-    polaris_principal.bob.name,
-    polaris_principal.bob.secret,
-    "PRINCIPAL_ROLE:${polaris_principal_role.us_data_eng.name}"
-  ]
-  depends_on = [polaris_principal_role_assignment.bob_to_us_data_eng]
-}
-output "bob_token" {
-  value     = data.external.bob_token.result.access_token
+output "engineer_token" {
+  value     = data.external.token["engineer"].result.access_token
   sensitive = true
 }
 
-data "external" "charlie_token" {
-  program = [
-    "${path.module}/scripts/fetch_token.sh",
-    polaris_principal.charlie.name,
-    polaris_principal.charlie.secret,
-    "PRINCIPAL_ROLE:service_admin"
-  ]
-  depends_on = [polaris_principal_role_assignment.charlie_to_service_admin]
+output "compliance_token" {
+  value     = data.external.token["compliance"].result.access_token
+  sensitive = true
 }
-output "charlie_token" {
-  value     = data.external.charlie_token.result.access_token
+
+output "analyst_token" {
+  value     = data.external.token["analyst"].result.access_token
   sensitive = true
 }
 

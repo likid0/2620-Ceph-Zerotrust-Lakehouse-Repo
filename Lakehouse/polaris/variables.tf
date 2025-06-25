@@ -32,7 +32,7 @@ variable "storage_base_location" {
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
-  default     = "arn:aws:iam::RGW947059089643XXXX:role/polaris/catalog/client"
+  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client"
 }
 
 variable "s3_region" {
@@ -44,7 +44,7 @@ variable "s3_region" {
 variable "endpoint" {
   description = "The S3 compat endpoint"
   type        = string
-  default     = "https://s3.example.com"
+  default     = "http://ceph-node2"
 }
 
 variable "profile_name" {
@@ -52,3 +52,4 @@ variable "profile_name" {
   type        = string
   default     = "polaris-root"
 }
+

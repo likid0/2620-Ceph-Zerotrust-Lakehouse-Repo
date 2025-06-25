@@ -98,6 +98,7 @@ aws configure set aws_access_key_id demo --profile polaris-root
 aws configure set aws_secret_access_key demo --profile polaris-root
 aws configure set endpoint_url http://ceph-node2 --profile polaris-root
 aws configure set region default --profile polaris-root
+echo "export TF_CLI_CONFIG_FILE=/root/terraform/polaris/.terraformrc" >> /root/.bashrc
 sleep 120
 ceph config-key get mgr/cephadm/registry_credentials | jq . > /root/scripts/registry.json
 scp /root/scripts/registry.json root@ceph-node1:/root/scripts

@@ -18,6 +18,51 @@
 In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on *Ceph Object Gateway (RGW)* and is governed by the *Polaris* data‑catalog.  
 You will automate the infrastructure with Terraform, ingest data with Spark, query it with Trino, and visualise it in Superset—while watching catalog‑level RBAC enforce least‑privilege at every step.
 
+=== Why are we doing all this?
+*A retail‑analytics story in four short scenes*
+
+Imagine you are the data team for **FreshGoods**, a mid‑size grocery chain that
+ships online orders from 40 local stores.  Every night each store uploads a
+CSV “drop” to Ceph RGW containing the day’s *product movement* log:
+
+* `product_id` • what was sold
+* `category`   • department (dairy, produce, pantry …)
+* `price`
+* `quantity`
+* `email`      • customer loyalty‑card e‑mail (PII we must protect)
+* timestamps, etc.
+
+Your mission: turn those raw files into insight the business can act on **by
+9 a.m.**—without ever letting unauthorised eyes near the PII.
+
+We will walk that journey in the lab, compressed into 90 minutes:
+
+. **Ingest (Engineer ➜ Spark)**
+  The *data‑engineer* persona lands last night’s CSV into an **Iceberg RAW
+  table** `products_raw` using Spark.  Nothing is filtered or masked yet.
+
+. **Curate & protect (Compliance ➜ Spark)**
+  The *compliance* persona reads the RAW table, hashes the `email` column,
+  calculates a `total = price * quantity`, and overwrites a clean
+  **GOLD table** `products_gold`.
+  They can still **read** RAW (audit duty) but only *they* can write GOLD.
+
+. **Explore (Analyst ➜ Trino CLI)**
+  The *analyst* persona checks row counts and quick aggregations from Trino,
+  confirming the overnight ingest ran.
+
+. **Visualise (Analyst ➜ Superset)**
+  Finally the analyst refreshes a Superset dashboard showing *Category sales
+  vs. previous day*—the chart the merchandisers see at roll‑call every
+  morning.  The hashed emails never leave the lake; the analyst never sees PII.
+
+The glue that enforces who can touch what is **Polaris** CatalogI.
+
+By the end of the lab you’ll have a governed catalog exactly like a real
+retailer might run—just shrunk to one bucket, two tables, and four personas so
+we can see the whole life‑cycle in a single sitting.
+
+
 === What you will build
 
 [source,mermaid]
@@ -427,17 +472,139 @@ What happens under the hood:
 
 === Verification
 
-
+We can run the `podman ps` command from the terminal to get a list of running containers:
+----
+# podman ps
+CONTAINER ID  IMAGE                                           COMMAND               CREATED      STATUS                PORTS                             NAMES
+739ff09d1ca5  quay.io/polaris-catalog/polaris:s3compatible    server polaris-se...  4 hours ago  Up 3 hours            0.0.0.0:8181-8182->8181-8182/tcp  polaris
+e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri...  4 hours ago  Up 4 hours            0.0.0.0:7077->7077/tcp            spark
+27b31efeffbe  docker.io/jupyter/pyspark-notebook:spark-3.5.0  start-notebook.py     4 hours ago  Up 4 hours (healthy)  0.0.0.0:8888->8888/tcp            jupiter
+911e40d103ee  docker.io/trinodb/trino:latest                  /usr/lib/trino/bi...  3 hours ago  Up 3 hours (healthy)  0.0.0.0:8080->8080/tcp            trino
+231de3a2e984  docker.io/apache/superset:latest                /bin/bash -c
+  s...        3 hours ago                                     Up 3 hours  0.0.0.0:8088->8088/tcp  superset
+----
 
 == Bootstrap a Polaris data catalog via Terraform
 
+=== Introduction
+Our FreshGoods pipeline already has **storage** (Ceph buckets) and **compute**
+(Spark, Trino, Superset).  What it still lacks is a *brain*—a catalog that knows
+*which tables exist, who may touch them, and how credentials are issued*.
+
+That brain is **Polaris**.  In this section you’ll run the `polaris/`
+Terraform module to codify the governance rules you just heard in the story:
+
+*Nightly product‑movement CSV drops in → PII masked → morning dashboard out.*
+
+=== What the module builds
+
+* **Catalog `prod`** → points at the `s3://polarisdemo` warehouse bucket.
+* **Namespace `prod_ns`** → think database / schema.
+* **Iceberg RAW & GOLD tables**
+  `products_raw` (ingested CSV) → `products_gold` (curated parquet).
+* **Four personas (principals)**
+  `admin`, `engineer`, `compliance`, `analyst`.
+* **Catalog roles & grants** that enforce least‑privilege:
+
+  | Persona      | Allowed actions |
+  |--------------|-----------------|
+  | *Engineer*   | read / write **RAW** |
+  | *Compliance* | read **RAW** + read / write **GOLD** |
+  | *Analyst*    | read **GOLD** |
+  | *Admin*      | everything (`catalog_admin`) |
+
+* **Short‑lived OAuth 2 tokens** for each persona, exported as Terraform
+  outputs so your notebook, Trino CLI, and Superset pick them up
+  automatically—no copy‑pasting secrets.
+
 === Modify Variables
+
+The directory that contains the Polaris Terraform code is
+`/root/terraform/polaris` , the variables file is called `variables.tf`, the
+only parameter we need to change is the `s3_role_arn` so that it has our Role
+ARN with the account ID included, we can get our role ARN with the following
+CLI command:
+
+----
+# aws --profile polaris-root iam list-roles | jq .Roles[0].Arn
+----
+
+You can then edit the terraform variabled file and use your labs role ARN:
+
+----
+# vi variables.tf
+variable "s3_role_arn" {
+  description = "The AWS IAM role ARN for accessing the S3 storage"
+  type        = string
+  default     = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client"
+}
+----
+
+The rest of the file variables are fine with the defaults, no need to change them.
+
 === Run Terraform
+
+Everything Polaris needs is now in place:
+
+* `polaris/terraform.tfvars` was auto‑generated by *demo.sh*
+  (warehouse URI, S3 role ARN, endpoint, profile name).
+* The Polaris service is healthy at http://localhost:8182.
+
+Open a terminal, change to the module directory, and initialise Terraform:
+
+[source,bash]
+----
+# cd ~/terraform/polaris 
+# terraform init
+Terraform has been successfully initialized!
+----
+
+(Optional) preview the execution plan:
+
+[source,bash]
+----
+terraform plan
+----
+
+You will see resources such as `polaris_catalog.prod` and
+`polaris_table.products_raw` in the _“to add”_ section; nothing is created yet.
+
+Apply the configuration:
+
+[source,bash]
+----
+terraform apply
+----
+
+Terraform will ask for confirmation. Type **yes** and hit ⏎.
+
+On success you will see something like:
+
+----
+Apply complete! Resources: 24 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+admin_token = <sensitive>
+engineer_token = <sensitive>
+compliance_token = <sensitive>
+analyst_token = <sensitive>
+----
+
+Behind the scenes Terraform has:
+
+* created catalog **prod** and namespace **prod_ns**
+* registered empty tables **products_raw** and **products_gold**
+* minted four principals with role bindings and grants
+* produced OAuth tokens that *demo.sh* already copied into
+  `notebooks/tokens.json` and the Trino catalog properties
+
+You are ready to ingest data in the next chapter.
+
 === Verify
 
 == Data pipeline execution with Jupiter Notebook 
 
-== 
 
 
 [IMPORTANT]
