@@ -89,6 +89,7 @@ done
 # Copy Ceph admin keys to workstation
 curl https://public.dhe.ibm.com/ibmdl/export/pub/storage/ceph/ibm-storage-ceph-8-rhel-9.repo | sudo tee /etc/yum.repos.d/ibm-storage-ceph-8-rhel-9.repo
 dnf install ceph-common -y
+dnf install java-latest-openjdk.x86_64 java-latest-openjdk-devel.x86_64 -y
 yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
 dnf -y install terraform
 dnf install podman.x86_64 podman-compose.noarch podman-docker.noarch podman-plugins.x86_64 -y

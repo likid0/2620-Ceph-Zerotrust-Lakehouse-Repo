@@ -62,6 +62,11 @@ placement:
   label: "rgw"
 spec:
   rgw_frontend_port: 80
+config:
+  rgw_exit_timeout_secs: "120"
+  rgw_graceful_stop: true
+  rgw_sts_key: 'passw0rdpassw0rd'
+  rgw_s3_auth_use_sts: true
 EOF
 
 # Apply the configuration using cephadm

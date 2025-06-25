@@ -603,6 +603,42 @@ You are ready to ingest data in the next chapter.
 
 === Verify
 
+==== Export your Polaris endpoint
+
+In your shell, point at the Polaris host and port you used in Terraform:
+
+[source,bash]
+----
+export POLARIS_HOST=localhost
+export POLARIS_PORT=8181
+----
+
+====  Obtain a demo user token
+
+We’ll use the “engineer” token for this example (you can repeat for any persona):
+
+[source,bash]
+----
+cd /root/terraform/polaris
+export DEMO_TOKEN=$(terraform output -raw engineer_token)
+echo $DEMO_TOKEN | head -c 20; echo "…"
+----
+
+If you see a long base64‑style string, you’re good.
+
+====  List all tables in prod/prod_ns
+
+Now call the REST API to list Iceberg tables in your `prod/prod_ns` namespace:
+
+[source,bash]
+----
+curl -sS \
+  -H "Authorization: Bearer $DEMO_TOKEN" \
+  -H "Accept: application/json" \
+  "http://$POLARIS_HOST:$POLARIS_PORT/api/catalog/v1/prod/namespaces/prod_ns/tables" \
+| jq .
+----
+
 == Data pipeline execution with Jupiter Notebook 
 
 
