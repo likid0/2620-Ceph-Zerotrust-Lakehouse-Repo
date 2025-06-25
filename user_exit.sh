@@ -7,6 +7,7 @@ mkdir /root/terraform
 mkdir /root/docs
 mkdir $USER_HOME/docs
 cp ./deploy_cluster.sh /root/scripts
+cp -pr ./Lakehouse/scripts/show_jupiter_notebook_url.sh /root/scripts
 cp -pr ./Lakehouse/ceph /root/terraform
 cp -pr ./Lakehouse/polaris /root/terraform
 cp -pr ./Lakehouse /root/lakehouse

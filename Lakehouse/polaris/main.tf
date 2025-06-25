@@ -1,15 +1,12 @@
-###############################################################################
-#  Polaris catalog bootstrap – FreshGoods lab
-###############################################################################
 terraform {
   required_version = ">= 1.0"
   required_providers {
-    polaris  = { source = "apache/polaris",  version = ">= 0.1.0" }
+    polaris  = { source = "apache/polaris", version = ">= 0.1.0" }
     external = { source = "hashicorp/external", version = ">= 2.3.0" }
+    time     = { source = "hashicorp/time",     version = ">= 0.9.0" }
   }
 }
 
-# ---------------------------------------------------------------- provider ---
 provider "polaris" {
   host   = var.polaris_host
   scheme = var.polaris_scheme
@@ -17,7 +14,9 @@ provider "polaris" {
   token  = var.auth_token
 }
 
-# ------------------------------------------------------ catalog & namespace --
+# ──────────────────────────────────────────────────────────────────────────────
+# Catalog & Namespace
+# ──────────────────────────────────────────────────────────────────────────────
 resource "polaris_catalog" "prod" {
   name = "prod"
   type = "INTERNAL"
@@ -43,17 +42,16 @@ resource "polaris_catalog" "prod" {
 resource "polaris_namespace" "prod_ns" {
   catalog_name   = polaris_catalog.prod.name
   namespace_path = ["prod_ns"]
-
-  properties = {
-    owner = "data‑eng"
-  }
+  properties     = { owner = "data-eng" }
 
   lifecycle {
     ignore_changes = [properties]
   }
 }
 
-# -------------------------------------------------------------- four users ---
+# ──────────────────────────────────────────────────────────────────────────────
+# Principals & Principal‑Roles
+# ──────────────────────────────────────────────────────────────────────────────
 locals {
   personas = {
     admin      = "Catalog administrator"
@@ -81,13 +79,15 @@ resource "polaris_principal_role_assignment" "role_bind" {
   principal_role_name = polaris_principal_role.role[each.key].name
 }
 
-# …admin additionally gets the built‑in service_admin role
+# admin also gets built‑in service_admin
 resource "polaris_principal_role_assignment" "admin_builtin" {
   principal_name      = polaris_principal.user["admin"].name
   principal_role_name = "service_admin"
 }
 
-# ----------------------------------------------------------- catalog roles ---
+# ──────────────────────────────────────────────────────────────────────────────
+# Catalog Roles
+# ──────────────────────────────────────────────────────────────────────────────
 resource "polaris_catalog_role" "engineer_raw_rw" {
   catalog_name = polaris_catalog.prod.name
   name         = "engineer_raw_rw"
@@ -124,26 +124,44 @@ resource "polaris_catalog_role_assignment" "analyst_map" {
   catalog_role_name   = polaris_catalog_role.analyst_gold_ro.name
 }
 
-# ------------------------------------------------------- privilege packages --
+# ──────────────────────────────────────────────────────────────────────────────
+# Privilege Packages
+# ──────────────────────────────────────────────────────────────────────────────
 resource "polaris_privilege_package" "table_reader" {
   name        = "TABLE_READER"
   description = "Basic table read access"
   privileges  = [
     "TABLE_READ_PROPERTIES",
+    "LIST_TABLES",
     "TABLE_READ_DATA",
   ]
 }
 
 resource "polaris_privilege_package" "table_writer" {
   name        = "TABLE_WRITER"
-  description = "Table read and write access"
+  description = "Table read & write access"
   privileges  = [
+    "TABLE_READ_PROPERTIES",
+    "LIST_TABLES",
     "TABLE_READ_DATA",
     "TABLE_WRITE_DATA",
   ]
 }
 
-# -------------------------------------------------------------- Iceberg RAW --
+# ──────────────────────────────────────────────────────────────────────────────
+# Avoid races: pause until priv‑pkgs exist
+# ──────────────────────────────────────────────────────────────────────────────
+resource "time_sleep" "after_priv_pkgs" {
+  depends_on      = [
+    polaris_privilege_package.table_reader,
+    polaris_privilege_package.table_writer,
+  ]
+  create_duration = "10s"
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Iceberg Tables
+# ──────────────────────────────────────────────────────────────────────────────
 resource "polaris_table" "products_raw" {
   depends_on     = [polaris_namespace.prod_ns]
   catalog_name   = polaris_catalog.prod.name
@@ -197,12 +215,9 @@ resource "polaris_table" "products_raw" {
     }
   }
 
-  properties = {
-    "format-version" = "2"
-  }
+  properties = { "format-version" = "2" }
 }
 
-# ------------------------------------------------------------- Iceberg GOLD --
 resource "polaris_table" "products_gold" {
   depends_on     = [polaris_namespace.prod_ns]
   catalog_name   = polaris_catalog.prod.name
@@ -250,15 +265,45 @@ resource "polaris_table" "products_gold" {
     }
   }
 
-  properties = {
-    "format-version" = "2"
-  }
+  properties = { "format-version" = "2" }
 }
 
-# ---------------------------------------------------- table-level privileges --
+# ──────────────────────────────────────────────────────────────────────────────
+# Namespace‑level grants so LIST_TABLES works
+# ──────────────────────────────────────────────────────────────────────────────
+resource "polaris_grant_package" "engineer_ns_read" {
+  depends_on        = [time_sleep.after_priv_pkgs]
+  catalog_name      = polaris_catalog.prod.name
+  role_name         = polaris_catalog_role.engineer_raw_rw.name
+  type              = "namespace"
+  namespace         = ["prod_ns"]
+  privilege_package = polaris_privilege_package.table_reader.name
+}
+
+resource "polaris_grant_package" "compliance_ns_read" {
+  depends_on        = [time_sleep.after_priv_pkgs]
+  catalog_name      = polaris_catalog.prod.name
+  role_name         = polaris_catalog_role.compliance_gold_rw.name
+  type              = "namespace"
+  namespace         = ["prod_ns"]
+  privilege_package = polaris_privilege_package.table_reader.name
+}
+
+resource "polaris_grant_package" "analyst_ns_read" {
+  depends_on        = [time_sleep.after_priv_pkgs]
+  catalog_name      = polaris_catalog.prod.name
+  role_name         = polaris_catalog_role.analyst_gold_ro.name
+  type              = "namespace"
+  namespace         = ["prod_ns"]
+  privilege_package = polaris_privilege_package.table_reader.name
+}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Table‑level grants
+# ──────────────────────────────────────────────────────────────────────────────
 resource "polaris_grant_package" "raw_rw_for_engineer" {
   depends_on = [
-    polaris_privilege_package.table_writer,
+    time_sleep.after_priv_pkgs,
     polaris_table.products_raw,
   ]
 
@@ -272,7 +317,7 @@ resource "polaris_grant_package" "raw_rw_for_engineer" {
 
 resource "polaris_grant_package" "raw_ro_for_compliance" {
   depends_on = [
-    polaris_privilege_package.table_reader,
+    time_sleep.after_priv_pkgs,
     polaris_table.products_raw,
   ]
 
@@ -286,7 +331,7 @@ resource "polaris_grant_package" "raw_ro_for_compliance" {
 
 resource "polaris_grant_package" "gold_rw_for_compliance" {
   depends_on = [
-    polaris_privilege_package.table_writer,
+    time_sleep.after_priv_pkgs,
     polaris_table.products_gold,
   ]
 
@@ -300,7 +345,7 @@ resource "polaris_grant_package" "gold_rw_for_compliance" {
 
 resource "polaris_grant_package" "gold_ro_for_analyst" {
   depends_on = [
-    polaris_privilege_package.table_reader,
+    time_sleep.after_priv_pkgs,
     polaris_table.products_gold,
   ]
 
@@ -312,7 +357,9 @@ resource "polaris_grant_package" "gold_ro_for_analyst" {
   privilege_package = polaris_privilege_package.table_reader.name
 }
 
-# --------------------------------------------------------- OAuth2 tokens -----
+# ──────────────────────────────────────────────────────────────────────────────
+# Token minting
+# ──────────────────────────────────────────────────────────────────────────────
 data "external" "token" {
   for_each = local.personas
 
@@ -333,20 +380,16 @@ output "admin_token" {
   value     = data.external.token["admin"].result.access_token
   sensitive = true
 }
-
 output "engineer_token" {
   value     = data.external.token["engineer"].result.access_token
   sensitive = true
 }
-
 output "compliance_token" {
   value     = data.external.token["compliance"].result.access_token
   sensitive = true
 }
-
 output "analyst_token" {
   value     = data.external.token["analyst"].result.access_token
   sensitive = true
 }
-
 
