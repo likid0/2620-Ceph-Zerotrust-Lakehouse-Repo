@@ -160,10 +160,24 @@
 <li><a href="#_what_the_module_builds">5.2. What the module builds</a></li>
 <li><a href="#_modify_variables_2">5.3. Modify Variables</a></li>
 <li><a href="#_run_terraform_2">5.4. Run Terraform</a></li>
-<li><a href="#_verify_2">5.5. Verify</a></li>
+<li><a href="#_verify_2">5.5. Verify</a>
+<ul class="sectlevel3">
+<li><a href="#_export_your_polaris_endpoint">5.5.1. Export your Polaris endpoint</a></li>
+<li><a href="#_obtain_a_demo_user_token">5.5.2. Obtain a demo user token</a></li>
+<li><a href="#_list_all_tables_in_prodprod_ns">5.5.3. List all tables in prod/prod_ns</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li><a href="#_data_pipeline_execution_with_jupiter_notebook">6. Data pipeline execution with Jupiter Notebook</a></li>
+<li><a href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino">7. Access the same Data Pipeline Tables with Different Query Engines (Trino)</a>
+<ul class="sectlevel2">
+<li><a href="#_1_connect_to_trino_cli">7.1. 1. Connect to Trino CLI</a></li>
+<li><a href="#_find_duplicate_soda_rows_in_the_raw_table">7.2. Find duplicate “Soda” rows in the RAW table</a></li>
+<li><a href="#_delete_the_extra_duplicates">7.3. Delete the extra duplicates</a></li>
+<li><a href="#_verify_the_duplicates_are_gone">7.4. Verify the duplicates are gone</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -1057,13 +1071,271 @@ analyst_token = &lt;sensitive&gt;</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_verify_2"><a class="anchor" href="#_verify_2"></a>5.5. Verify</h3>
-
+<div class="sect3">
+<h4 id="_export_your_polaris_endpoint"><a class="anchor" href="#_export_your_polaris_endpoint"></a>5.5.1. Export your Polaris endpoint</h4>
+<div class="paragraph">
+<p>In your shell, point at the Polaris host and port you used in Terraform:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export POLARIS_HOST=localhost
+export POLARIS_PORT=8181</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_obtain_a_demo_user_token"><a class="anchor" href="#_obtain_a_demo_user_token"></a>5.5.2. Obtain a demo user token</h4>
+<div class="paragraph">
+<p>We’ll use the “engineer” token for this example (you can repeat for any persona):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">cd /root/terraform/polaris
+export DEMO_TOKEN=$(terraform output -raw engineer_token)
+echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you see a long base64‑style string, you’re good.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_list_all_tables_in_prodprod_ns"><a class="anchor" href="#_list_all_tables_in_prodprod_ns"></a>5.5.3. List all tables in prod/prod_ns</h4>
+<div class="paragraph">
+<p>Now call the REST API to list Iceberg tables in your <code>prod/prod_ns</code> namespace:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sS \
+  -H "Authorization: Bearer $DEMO_TOKEN" \
+  -H "Accept: application/json" \
+  "http://$POLARIS_HOST:$POLARIS_PORT/api/catalog/v1/prod/namespaces/prod_ns/tables" \
+| jq .</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_data_pipeline_execution_with_jupiter_notebook"><a class="anchor" href="#_data_pipeline_execution_with_jupiter_notebook"></a>6. Data pipeline execution with Jupiter Notebook</h2>
 <div class="sectionbody">
+<div class="paragraph">
+<p>In this step, you’ll use a Jupyter Notebook to drive our Spark‑based data pipeline end‑to‑end.  Notebooks give us an interactive environment—combining documentation, code, and live output—so you can explore, validate, and debug each stage of the pipeline as you go.  Spark’s built‑in integration with Iceberg makes it trivial to read and write our RAW and GOLD tables with just a few lines of code.</p>
+</div>
+<div class="paragraph">
+<p>First, we’ll execute a helper script to get the jupyter URL that we will use.  Then you’ll open the <code>polaris_data_pipeline.ipynb</code> notebook and run through the ingestion, curation, and validation steps for our FreshGoods demo.</p>
+</div>
+<div class="paragraph">
+<p>Run the helper script to print your JupyterLab URL and access token:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash /root/scripts/show_jupyter_notebook_url.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Copy the printed URL (including the <code>?token=…</code> query) into your VNC Desktop browser’s address bar.
+  You should see the JupyterLab interface shortly.</p>
+</div>
+<div class="paragraph">
+<p>In the left sidebar, navigate to the <code>notebooks/</code> directory and click on <code>polaris_data_pipeline.ipynb</code> to open it.</p>
+</div>
+<div class="paragraph">
+<p>Follow the notebook cells in order.  Each cell contains explanatory markdown along with the Spark‑SQL or DataFrame APIs to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ingest the <code>products_raw_200.csv</code> file into your Iceberg RAW table</p>
+</li>
+<li>
+<p>Transform, hash PII, and overwrite the Parquet GOLD table</p>
+</li>
+<li>
+<p>Verify and preview pipeline output as the Analyst persona</p>
+</li>
+<li>
+<p>(Bonus) Validate that unauthorized personas cannot see or write data they shouldn’t</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>By the end of this notebook you will have run a full end‑to‑end Spark data pipeline—demonstrating raw ingest, fine‑grained RBAC, and PII protection—all within an interactive, repeatable environment.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_access_the_same_data_pipeline_tables_with_different_query_engines_trino"><a class="anchor" href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino"></a>7. Access the same Data Pipeline Tables with Different Query Engines (Trino)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls. In this section, we’ll use the Trino CLI against our <code>prod</code> catalog and <code>prod_ns</code> schema—running as the <strong>Engineer</strong> persona—to:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Find “Soda” duplicates in the RAW table</p>
+</li>
+<li>
+<p>Delete the extra rows</p>
+</li>
+<li>
+<p>Confirm the duplicates are gone</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>This demonstrates how you get consistent governance across compute engines.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_connect_to_trino_cli"><a class="anchor" href="#_1_connect_to_trino_cli"></a>7.1. 1. Connect to Trino CLI</h3>
+<div class="paragraph">
+<p>Make sure you have run at least once the helper script `/root/scripts/show_jupiter_notebook_url.sh `. Then launch:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash /root/lakehouse/trino-cli.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see a prompt like the following, using this prompt we will run our querys:</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="paragraph">
+<p>trino:prod_ns&gt;</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_find_duplicate_soda_rows_in_the_raw_table"><a class="anchor" href="#_find_duplicate_soda_rows_in_the_raw_table"></a>7.2. Find duplicate “Soda” rows in the RAW table</h3>
+<div class="paragraph">
+<p>Now switch to the RAW table and look for any products named “Soda” that appear more than once:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">SELECT
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity,
+  COUNT(*) AS occurrences
+FROM products_raw
+WHERE product_name = 'Soda'
+GROUP BY
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity
+HAVING COUNT(*) &gt; 1;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If any duplicates exist, you’ll see one or more rows with <code>occurrences &gt; 1</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_delete_the_extra_duplicates"><a class="anchor" href="#_delete_the_extra_duplicates"></a>7.3. Delete the extra duplicates</h3>
+<div class="paragraph">
+<p>Keep the earliest timestamped row and delete the rest. Run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">DELETE FROM products_raw
+ WHERE (product_id, product_name, category, price, quantity, timestamp)
+   IN (
+     SELECT product_id,
+            product_name,
+            category,
+            price,
+            quantity,
+            timestamp
+       FROM (
+         SELECT
+           product_id,
+           product_name,
+           category,
+           price,
+           quantity,
+           timestamp,
+           ROW_NUMBER() OVER (
+             PARTITION BY product_id,
+                          product_name,
+                          category,
+                          price,
+                          quantity
+             ORDER BY timestamp
+           ) AS rn
+         FROM products_raw
+       ) AS dup
+      WHERE dup.rn &gt; 1
+   );</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Trino will report how many rows were deleted.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verify_the_duplicates_are_gone"><a class="anchor" href="#_verify_the_duplicates_are_gone"></a>7.4. Verify the duplicates are gone</h3>
+<div class="paragraph">
+<p>Run the same “find duplicates” query again; it should now return zero rows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">SELECT
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity,
+  COUNT(*) AS occurrences
+FROM products_raw
+WHERE product_name = 'Soda'
+GROUP BY
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity
+HAVING COUNT(*) &gt; 1;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Expected output:</p>
+</div>
+<div class="exampleblock">
+<div class="content">
+<div class="paragraph">
+<p>(0 rows)</p>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>At this point you have:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ingested raw CSV into Iceberg</p>
+</li>
+<li>
+<p>Curated &amp; protected PII in GOLD</p>
+</li>
+<li>
+<p>Used Trino to validate and even mutate the RAW data</p>
+</li>
+<li>
+<p>Done all of it under the same fine‑grained RBAC rules</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.</p>
+</div>
 <div class="admonitionblock important">
 <table>
 <tr>
@@ -1089,6 +1361,7 @@ analyst_token = &lt;sensitive&gt;</code></pre>
 </td>
 </tr>
 </table>
+</div>
 </div>
 </div>
 </div>
