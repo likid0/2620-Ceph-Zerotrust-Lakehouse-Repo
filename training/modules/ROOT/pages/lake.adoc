@@ -641,6 +641,161 @@ curl -sS \
 
 == Data pipeline execution with Jupiter Notebook 
 
+In this step, you’ll use a Jupyter Notebook to drive our Spark‑based data pipeline end‑to‑end.  Notebooks give us an interactive environment—combining documentation, code, and live output—so you can explore, validate, and debug each stage of the pipeline as you go.  Spark’s built‑in integration with Iceberg makes it trivial to read and write our RAW and GOLD tables with just a few lines of code.
+
+First, we’ll execute a helper script to get the jupyter URL that we will use.  Then you’ll open the `polaris_data_pipeline.ipynb` notebook and run through the ingestion, curation, and validation steps for our FreshGoods demo.
+
+Run the helper script to print your JupyterLab URL and access token:
+
+[source,bash]
+----
+bash /root/scripts/show_jupyter_notebook_url.sh
+----
+
+Copy the printed URL (including the `?token=…` query) into your VNC Desktop browser’s address bar.
+  You should see the JupyterLab interface shortly.
+
+In the left sidebar, navigate to the `notebooks/` directory and click on `polaris_data_pipeline.ipynb` to open it.
+
+Follow the notebook cells in order.  Each cell contains explanatory markdown along with the Spark‑SQL or DataFrame APIs to:
+
+  * Ingest the `products_raw_200.csv` file into your Iceberg RAW table
+  * Transform, hash PII, and overwrite the Parquet GOLD table
+  * Verify and preview pipeline output as the Analyst persona
+  * (Bonus) Validate that unauthorized personas cannot see or write data they shouldn’t
+
+By the end of this notebook you will have run a full end‑to‑end Spark data pipeline—demonstrating raw ingest, fine‑grained RBAC, and PII protection—all within an interactive, repeatable environment.
+
+
+== Access the same Data Pipeline Tables with Different Query Engines (Trino)
+
+Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_ns` schema—running as the **Engineer** persona—to:
+
+. Find “Soda” duplicates in the RAW table
+. Delete the extra rows
+. Confirm the duplicates are gone
+
+This demonstrates how you get consistent governance across compute engines.
+
+=== 1. Connect to Trino CLI
+
+Make sure you have run at least once the helper script `/root/scripts/show_jupiter_notebook_url.sh `. Then launch:
+
+[source,bash]
+----
+bash /root/lakehouse/trino-cli.sh
+----
+
+You should see a prompt like the following, using this prompt we will run our querys:
+
+====
+trino:prod_ns>
+====
+
+=== Find duplicate “Soda” rows in the RAW table
+
+Now switch to the RAW table and look for any products named “Soda” that appear more than once:
+
+[source,bash]
+----
+SELECT
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity,
+  COUNT(*) AS occurrences
+FROM products_raw
+WHERE product_name = 'Soda'
+GROUP BY
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity
+HAVING COUNT(*) > 1;
+----
+
+If any duplicates exist, you’ll see one or more rows with `occurrences > 1`.
+
+=== Delete the extra duplicates
+
+Keep the earliest timestamped row and delete the rest. Run:
+
+[source,bash]
+----
+DELETE FROM products_raw
+ WHERE (product_id, product_name, category, price, quantity, timestamp)
+   IN (
+     SELECT product_id,
+            product_name,
+            category,
+            price,
+            quantity,
+            timestamp
+       FROM (
+         SELECT
+           product_id,
+           product_name,
+           category,
+           price,
+           quantity,
+           timestamp,
+           ROW_NUMBER() OVER (
+             PARTITION BY product_id,
+                          product_name,
+                          category,
+                          price,
+                          quantity
+             ORDER BY timestamp
+           ) AS rn
+         FROM products_raw
+       ) AS dup
+      WHERE dup.rn > 1
+   );
+----
+
+Trino will report how many rows were deleted.
+
+=== Verify the duplicates are gone
+
+Run the same “find duplicates” query again; it should now return zero rows:
+
+[source,bash]
+----
+SELECT
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity,
+  COUNT(*) AS occurrences
+FROM products_raw
+WHERE product_name = 'Soda'
+GROUP BY
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity
+HAVING COUNT(*) > 1;
+----
+
+Expected output:
+
+====
+(0 rows)
+====
+
+At this point you have:
+
+* Ingested raw CSV into Iceberg
+* Curated & protected PII in GOLD
+* Used Trino to validate and even mutate the RAW data
+* Done all of it under the same fine‑grained RBAC rules
+
+This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.
+
 
 
 [IMPORTANT]

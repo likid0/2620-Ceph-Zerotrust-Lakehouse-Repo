@@ -264,8 +264,11 @@ resource "polaris_table" "products_gold" {
       required = true
     }
   }
-
-  properties = { "format-version" = "2" }
+  properties = {
+    "format-version"                  = "2"
+    "write.format.default"            = "parquet"
+    "write.parquet.compression-codec" = "snappy"
+  }
 }
 
 # ──────────────────────────────────────────────────────────────────────────────
