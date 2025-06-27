@@ -12,7 +12,98 @@
 :toc: left
 :toclevels: 4
 
-== Introduction
+== ZeroTrus Data LakeHouse
+== Why Governance is a complex topic in a Lakehouse
+[.lead]
+Enterprises increasingly standardise on **Ceph Object Storage** as the
+S3-compatible landing zone for analytics.
+However, the moment *multiple* compute engines (Spark, Trino, Flink, AI
+notebooks) must operate on the *same* objects, a critical governance gap
+emerges:
+how to impose **database-style, table-level privileges** directly at the
+object layer, *without* introducing performance bottlenecks or an explosion of
+one-off security plug-ins.
+The sections below dissect the problem, evaluate common but inadequate
+approaches, and show how Polaris resolves it through credential vending.
+
+=== 1. Three Forces Pulling You Apart
+
+[cols="25,75",frame=none,grid=rows]
+|===
+| *Database-style GRANTs*
+  (what analysts expect)
+| “Give me `GRANT SELECT ON products` like in Postgres or Snowflake.”
+
+| *Storage-level enforcement*
+  (what Zero-Trust demands)
+| The security team insists the rule lives **at the object layer**, not
+  in ten different SQL engines.
+
+| *Direct I/O paths*
+  (what performance needs)
+| ETL jobs must read objects at wire-speed – no extra proxy hop
+  that throttles throughput.
+|===
+
+These forces collide the moment your lakehouse grows past a single engine.
+
+=== 2. Common “Fixes” That Don’t Really Fix Anything
+
+.Kubernetes & Namespace-per-Bucket Silos
+[%autowidth,role=step]
+|===
+|*Pattern* |One bucket + one secret _per_ namespace
+|*Looks good* |Strong isolation by default
+|*Breaks when…* |Team *Purple* must read the *Blue* team’s raw bucket.
+|*Result* |Either you copy data (costly) or copy secrets (scary).
+|===
+
+.PEP Only Inside Each Engine
+[%autowidth,role=step]
+|===
+|*Pattern* |Add a Policy Enforcement Point (PEP) plug-in to Trino, Spark, …
+|*Looks good* |Fine-grained rules _inside_ that engine
+|*Breaks when…* |A new engine arrives – you re-implement the plug-in *again*.
+|*Result* | ∞ code paths, inconsistent policy, hard audits.
+|===
+
+.Reverse-Proxy in Front of RGW
+[%autowidth,role=step]
+|===
+|*Pattern* |Send every S3 call through a smart proxy that checks ACLs.
+|*Looks good* |Central control, classic pattern.
+|*Breaks when…* |90 TB/h ingest hits the proxy; now the proxy *is* the bottleneck.
+|*Result* |Scale pain + another SPOF in the data path.
+|===
+
+TIP: Gartner estimates that 64 % of object-storage leaks in 2024 were caused by
+hand-crafted policy work-arounds like the three above.
+
+=== 3. Polaris Credential Vending — *Table-Level* RBAC without Sidecars
+
+image::architecture/polaris-vending.svg[align=center, role=diagram]
+
+[cols="30,70",frame=none,grid=none]
+|===
+|*Source of truth* |Polaris stores every Iceberg **Table** + its GRANT matrix.
+|*Ask* |A Spark executor authenticates once to Polaris.
+|*Answer* |Polaris returns a *time-bound STS token* whose S3 policy covers
+only the tables that executor may touch.
+|*Enforce @ Ceph* |RGW evaluates that policy – no extra proxy hop required.
+|===
+
+*What you gain*
+
+* **SQL-style grants** (`GRANT SELECT`, `GRANT INSERT`) that analysts recognise.
+* **Least-privilege tokens** valid for minutes, not months.
+* **Engine-agnostic** – Spark, Trino, Flink all speak the same Iceberg
+metadata, so one policy fits all.
+* **Full speed** – the executor streams Parquet directly from RGW.
+
+That is *governance at lake-speed*.
+
+
+== Lab Introduction
 
 [abstract]
 In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on *Ceph Object Gateway (RGW)* and is governed by the *Polaris* data‑catalog.  
