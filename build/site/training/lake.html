@@ -111,27 +111,35 @@
 <div id="toc" class="toc">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_introduction">1. Introduction</a>
+<li><a href="#_zerotrus_data_lakehouse">1. ZeroTrus Data LakeHouse</a></li>
+<li><a href="#_why_governance_is_a_complex_topic_in_a_lakehouse">2. Why Governance is a complex topic in a Lakehouse</a>
 <ul class="sectlevel2">
-<li><a href="#_why_are_we_doing_all_this">1.1. Why are we doing all this?</a></li>
-<li><a href="#_what_you_will_build">1.2. What you will build</a></li>
-<li><a href="#_core_skills_youll_practise">1.3. Core skills you’ll practise</a></li>
-<li><a href="#_lab_flow_at_a_glance">1.4. Lab flow at a glance</a></li>
-<li><a href="#_estimated_time">1.5. Estimated time</a></li>
-<li><a href="#_provided_for_you">1.6. Provided for you</a></li>
+<li><a href="#_1_three_forces_pulling_you_apart">2.1. 1. Three Forces Pulling You Apart</a></li>
+<li><a href="#_2_common_fixes_that_dont_really_fix_anything">2.2. 2. Common “Fixes” That Don’t Really Fix Anything</a></li>
+<li><a href="#_3_polaris_credential_vending_table_level_rbac_without_sidecars">2.3. 3. Polaris Credential Vending — <strong>Table-Level</strong> RBAC without Sidecars</a></li>
 </ul>
 </li>
-<li><a href="#_checking_the_current_state_of_the_lab">2. Checking the current state of the lab</a></li>
-<li><a href="#_creating_the_required_s3_iam_account_and_root_account_user">3. Creating the required S3 IAM Account and Root Account User</a>
+<li><a href="#_lab_introduction">3. Lab Introduction</a>
 <ul class="sectlevel2">
-<li><a href="#_creating_the_iam_account">3.1. Creating the IAM Account</a></li>
+<li><a href="#_why_are_we_doing_all_this">3.1. Why are we doing all this?</a></li>
+<li><a href="#_what_you_will_build">3.2. What you will build</a></li>
+<li><a href="#_core_skills_youll_practise">3.3. Core skills you’ll practise</a></li>
+<li><a href="#_lab_flow_at_a_glance">3.4. Lab flow at a glance</a></li>
+<li><a href="#_estimated_time">3.5. Estimated time</a></li>
+<li><a href="#_provided_for_you">3.6. Provided for you</a></li>
 </ul>
 </li>
-<li><a href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources">4. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</a>
+<li><a href="#_checking_the_current_state_of_the_lab">4. Checking the current state of the lab</a></li>
+<li><a href="#_creating_the_required_s3_iam_account_and_root_account_user">5. Creating the required S3 IAM Account and Root Account User</a>
 <ul class="sectlevel2">
-<li><a href="#_why_automate_this_step">4.1. Why automate this step?</a></li>
-<li><a href="#_what_the_code_does">4.2. What the code does</a></li>
-<li><a href="#_modify_variables">4.3. Modify Variables</a></li>
+<li><a href="#_creating_the_iam_account">5.1. Creating the IAM Account</a></li>
+</ul>
+</li>
+<li><a href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources">6. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</a>
+<ul class="sectlevel2">
+<li><a href="#_why_automate_this_step">6.1. Why automate this step?</a></li>
+<li><a href="#_what_the_code_does">6.2. What the code does</a></li>
+<li><a href="#_modify_variables">6.3. Modify Variables</a></li>
 </ul>
 </li>
 <li><a href="#_cat_terraform_tfvars">cat terraform.tfvars</a></li>
@@ -148,7 +156,7 @@
 </li>
 <li><a href="#_verify">.2. Verify</a></li>
 <li><a href="#_deploy_the_lab_analytical_container_stack">3. Deploy the Lab Analytical Container Stack</a></li>
-<li><a href="#_introduction_2">4. Introduction</a>
+<li><a href="#_introduction">4. Introduction</a>
 <ul class="sectlevel2">
 <li><a href="#_deployment_with_podman_compose_using_wrapper_script">4.1. Deployment with Podman Compose using wrapper script</a></li>
 <li><a href="#_verification">4.2. Verification</a></li>
@@ -156,7 +164,7 @@
 </li>
 <li><a href="#_bootstrap_a_polaris_data_catalog_via_terraform">5. Bootstrap a Polaris data catalog via Terraform</a>
 <ul class="sectlevel2">
-<li><a href="#_introduction_3">5.1. Introduction</a></li>
+<li><a href="#_introduction_2">5.1. Introduction</a></li>
 <li><a href="#_what_the_module_builds">5.2. What the module builds</a></li>
 <li><a href="#_modify_variables_2">5.3. Modify Variables</a></li>
 <li><a href="#_run_terraform_2">5.4. Run Terraform</a></li>
@@ -183,7 +191,212 @@
 </ul>
 </div>
 <div class="sect1">
-<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>1. Introduction</h2>
+<h2 id="_zerotrus_data_lakehouse"><a class="anchor" href="#_zerotrus_data_lakehouse"></a>1. ZeroTrus Data LakeHouse</h2>
+<div class="sectionbody">
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/CephS3Native.png" alt="CephS3Native">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_governance_is_a_complex_topic_in_a_lakehouse"><a class="anchor" href="#_why_governance_is_a_complex_topic_in_a_lakehouse"></a>2. Why Governance is a complex topic in a Lakehouse</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p>Enterprises increasingly standardise on <strong>Ceph Object Storage</strong> as the
+S3-compatible landing zone for analytics.
+However, the moment <strong>multiple</strong> compute engines (Spark, Trino, Flink, AI
+notebooks) must operate on the <strong>same</strong> objects, a critical governance gap
+emerges:
+how to impose <strong>database-style, table-level privileges</strong> directly at the
+object layer, <strong>without</strong> introducing performance bottlenecks or an explosion of
+one-off security plug-ins.
+The sections below dissect the problem, evaluate common but inadequate
+approaches, and show how Polaris resolves it through credential vending.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_three_forces_pulling_you_apart"><a class="anchor" href="#_1_three_forces_pulling_you_apart"></a>2.1. 1. Three Forces Pulling You Apart</h3>
+<table class="tableblock frame-none grid-rows stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database-style GRANTs</strong>
+  (what analysts expect)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">“Give me <code>GRANT SELECT ON products</code> like in Postgres or Snowflake.”</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Storage-level enforcement</strong>
+  (what Zero-Trust demands)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The security team insists the rule lives <strong>at the object layer</strong>, not
+  in ten different SQL engines.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Direct I/O paths</strong>
+  (what performance needs)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ETL jobs must read objects at wire-speed – no extra proxy hop
+  that throttles throughput.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>These forces collide the moment your lakehouse grows past a single engine.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_2_common_fixes_that_dont_really_fix_anything"><a class="anchor" href="#_2_common_fixes_that_dont_really_fix_anything"></a>2.2. 2. Common “Fixes” That Don’t Really Fix Anything</h3>
+<table class="tableblock frame-all grid-all fit-content step">
+<caption class="title">Table 1. Kubernetes &amp; Namespace-per-Bucket Silos</caption>
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One bucket + one secret <em>per</em> namespace</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Looks good</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Strong isolation by default</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Breaks when…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Team <strong>Purple</strong> must read the <strong>Blue</strong> team’s raw bucket.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Result</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Either you copy data (costly) or copy secrets (scary).</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all fit-content step">
+<caption class="title">Table 2. PEP Only Inside Each Engine</caption>
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a Policy Enforcement Point (PEP) plug-in to Trino, Spark, …</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Looks good</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fine-grained rules <em>inside</em> that engine</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Breaks when…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new engine arrives – you re-implement the plug-in <strong>again</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Result</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">∞ code paths, inconsistent policy, hard audits.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all fit-content step">
+<caption class="title">Table 3. Reverse-Proxy in Front of RGW</caption>
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Send every S3 call through a smart proxy that checks ACLs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Looks good</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Central control, classic pattern.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Breaks when…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90 TB/h ingest hits the proxy; now the proxy <strong>is</strong> the bottleneck.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Result</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale pain + another SPOF in the data path.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock tip">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-tip" title="Tip"></i>
+</td>
+<td class="content">
+Gartner estimates that 64 % of object-storage leaks in 2024 were caused by
+hand-crafted policy work-arounds like the three above.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_polaris_credential_vending_table_level_rbac_without_sidecars"><a class="anchor" href="#_3_polaris_credential_vending_table_level_rbac_without_sidecars"></a>2.3. 3. Polaris Credential Vending — <strong>Table-Level</strong> RBAC without Sidecars</h3>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/CatalogVending.png" alt="CatalogVending">
+</div>
+</div>
+<table class="tableblock frame-none grid-none stretch">
+<colgroup>
+<col style="width: 30%;">
+<col style="width: 70%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source of truth</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polaris stores every Iceberg <strong>Table</strong> + its GRANT matrix.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Ask</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Spark executor authenticates once to Polaris.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Answer</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polaris returns a <strong>time-bound STS token</strong> whose S3 policy covers
+only the tables that executor may touch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Enforce @ Ceph</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RGW evaluates that policy – no extra proxy hop required.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p><strong>What you gain</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>SQL-style grants</strong> (<code>GRANT SELECT</code>, <code>GRANT INSERT</code>) that analysts recognise.</p>
+</li>
+<li>
+<p><strong>Least-privilege tokens</strong> valid for minutes, not months.</p>
+</li>
+<li>
+<p><strong>Engine-agnostic</strong> – Spark, Trino, Flink all speak the same Iceberg
+metadata, so one policy fits all.</p>
+</li>
+<li>
+<p><strong>Full speed</strong> – the executor streams Parquet directly from RGW.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>That is <strong>governance at lake-speed</strong>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_lab_introduction"><a class="anchor" href="#_lab_introduction"></a>3. Lab Introduction</h2>
 <div class="sectionbody">
 <div class="quoteblock abstract">
 <blockquote>
@@ -192,7 +405,7 @@ You will automate the infrastructure with Terraform, ingest data with Spark, que
 </blockquote>
 </div>
 <div class="sect2">
-<h3 id="_why_are_we_doing_all_this"><a class="anchor" href="#_why_are_we_doing_all_this"></a>1.1. Why are we doing all this?</h3>
+<h3 id="_why_are_we_doing_all_this"><a class="anchor" href="#_why_are_we_doing_all_this"></a>3.1. Why are we doing all this?</h3>
 <div class="paragraph">
 <p><strong>A retail‑analytics story in four short scenes</strong></p>
 </div>
@@ -267,7 +480,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_what_you_will_build"><a class="anchor" href="#_what_you_will_build"></a>1.2. What you will build</h3>
+<h3 id="_what_you_will_build"><a class="anchor" href="#_what_you_will_build"></a>3.2. What you will build</h3>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-mermaid hljs" data-lang="mermaid">flowchart TD
@@ -294,7 +507,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_core_skills_youll_practise"><a class="anchor" href="#_core_skills_youll_practise"></a>1.3. Core skills you’ll practise</h3>
+<h3 id="_core_skills_youll_practise"><a class="anchor" href="#_core_skills_youll_practise"></a>3.3. Core skills you’ll practise</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 50%;">
@@ -335,7 +548,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 </table>
 </div>
 <div class="sect2">
-<h3 id="_lab_flow_at_a_glance"><a class="anchor" href="#_lab_flow_at_a_glance"></a>1.4. Lab flow at a glance</h3>
+<h3 id="_lab_flow_at_a_glance"><a class="anchor" href="#_lab_flow_at_a_glance"></a>3.4. Lab flow at a glance</h3>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
@@ -366,13 +579,13 @@ we can see the whole life‑cycle in a single sitting.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_estimated_time"><a class="anchor" href="#_estimated_time"></a>1.5. Estimated time</h3>
+<h3 id="_estimated_time"><a class="anchor" href="#_estimated_time"></a>3.5. Estimated time</h3>
 <div class="paragraph">
 <p><strong>90 minutes</strong></p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_provided_for_you"><a class="anchor" href="#_provided_for_you"></a>1.6. Provided for you</h3>
+<h3 id="_provided_for_you"><a class="anchor" href="#_provided_for_you"></a>3.6. Provided for you</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -390,7 +603,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_checking_the_current_state_of_the_lab"><a class="anchor" href="#_checking_the_current_state_of_the_lab"></a>2. Checking the current state of the lab</h2>
+<h2 id="_checking_the_current_state_of_the_lab"><a class="anchor" href="#_checking_the_current_state_of_the_lab"></a>4. Checking the current state of the lab</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>If you are reading this doc, you should have your IBM Storage Ceph
@@ -431,10 +644,10 @@ we can run most of the necessary commands for this lab from the workstation.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_creating_the_required_s3_iam_account_and_root_account_user"><a class="anchor" href="#_creating_the_required_s3_iam_account_and_root_account_user"></a>3. Creating the required S3 IAM Account and Root Account User</h2>
+<h2 id="_creating_the_required_s3_iam_account_and_root_account_user"><a class="anchor" href="#_creating_the_required_s3_iam_account_and_root_account_user"></a>5. Creating the required S3 IAM Account and Root Account User</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_creating_the_iam_account"><a class="anchor" href="#_creating_the_iam_account"></a>3.1. Creating the IAM Account</h3>
+<h3 id="_creating_the_iam_account"><a class="anchor" href="#_creating_the_iam_account"></a>5.1. Creating the IAM Account</h3>
 <div class="paragraph">
 <p>radosgw-admin account create --account-name=analytics
 === Creating the Root User for the IAM Account
@@ -447,14 +660,14 @@ aws --profile polaris-root s3 mb s3://polarisdemo
 </div>
 </div>
 <div class="sect1">
-<h2 id="_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"><a class="anchor" href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"></a>4. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</h2>
+<h2 id="_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"><a class="anchor" href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"></a>6. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Before we launch Spark, Trino, or Polaris we need a secure <strong>landing zone</strong> inside Ceph’s Object Gateway (RGW).
 Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in <strong>Terraform</strong>—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.</p>
 </div>
 <div class="sect2">
-<h3 id="_why_automate_this_step"><a class="anchor" href="#_why_automate_this_step"></a>4.1. Why automate this step?</h3>
+<h3 id="_why_automate_this_step"><a class="anchor" href="#_why_automate_this_step"></a>6.1. Why automate this step?</h3>
 <div class="ulist">
 <ul>
 <li>
@@ -470,7 +683,7 @@ Rather than clicking through the Ceph Dashboard by hand, we’ll declare every b
 </div>
 </div>
 <div class="sect2">
-<h3 id="_what_the_code_does"><a class="anchor" href="#_what_the_code_does"></a>4.2. What the code does</h3>
+<h3 id="_what_the_code_does"><a class="anchor" href="#_what_the_code_does"></a>6.2. What the code does</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -517,7 +730,7 @@ to the Query Engine(Spark, Trino) asking for access to a Table. It contains a si
 </table>
 </div>
 <div class="sect2">
-<h3 id="_modify_variables"><a class="anchor" href="#_modify_variables"></a>4.3. Modify Variables</h3>
+<h3 id="_modify_variables"><a class="anchor" href="#_modify_variables"></a>6.3. Modify Variables</h3>
 <div class="paragraph">
 <p>The Ceph Terraform Variables file we need to edit is located in our desktop
 machine at <code>/root/terraform/ceph</code> with the name <code>terraform.tfvars</code>.</p>
@@ -801,7 +1014,7 @@ assumes the Role:</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_introduction_2"><a class="anchor" href="#_introduction_2"></a>4. Introduction</h2>
+<h2 id="_introduction"><a class="anchor" href="#_introduction"></a>4. Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>With storage and IAM wiring complete, bring the <strong>analytic tier</strong> online.
@@ -897,7 +1110,7 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 <h2 id="_bootstrap_a_polaris_data_catalog_via_terraform"><a class="anchor" href="#_bootstrap_a_polaris_data_catalog_via_terraform"></a>5. Bootstrap a Polaris data catalog via Terraform</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_introduction_3"><a class="anchor" href="#_introduction_3"></a>5.1. Introduction</h3>
+<h3 id="_introduction_2"><a class="anchor" href="#_introduction_2"></a>5.1. Introduction</h3>
 <div class="paragraph">
 <p>Our FreshGoods pipeline already has <strong>storage</strong> (Ceph buckets) and <strong>compute</strong>
 (Spark, Trino, Superset).  What it still lacks is a <strong>brain</strong>—a catalog that knows

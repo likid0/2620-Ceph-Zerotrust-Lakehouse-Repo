@@ -13,6 +13,7 @@
 :toclevels: 4
 
 == ZeroTrus Data LakeHouse
+image::CephS3Native.png[align=center, role=diagram]
 == Why Governance is a complex topic in a Lakehouse
 [.lead]
 Enterprises increasingly standardise on **Ceph Object Storage** as the
@@ -81,7 +82,7 @@ hand-crafted policy work-arounds like the three above.
 
 === 3. Polaris Credential Vending — *Table-Level* RBAC without Sidecars
 
-image::architecture/polaris-vending.svg[align=center, role=diagram]
+image::CatalogVending.png[align=center, role=diagram]
 
 [cols="30,70",frame=none,grid=none]
 |===
