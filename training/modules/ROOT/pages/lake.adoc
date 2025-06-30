@@ -27,7 +27,7 @@ one-off security plug-ins.
 The sections below dissect the problem, evaluate common but inadequate
 approaches, and show how Polaris resolves it through credential vending.
 
-=== 1. Three Forces Pulling You Apart
+=== Three Forces Pulling You Apart
 
 [cols="25,75",frame=none,grid=rows]
 |===
@@ -48,7 +48,7 @@ approaches, and show how Polaris resolves it through credential vending.
 
 These forces collide the moment your lakehouse grows past a single engine.
 
-=== 2. Common “Fixes” That Don’t Really Fix Anything
+=== Common “Fixes” That Don’t Really Fix Anything
 
 .Kubernetes & Namespace-per-Bucket Silos
 [%autowidth,role=step]
@@ -80,7 +80,7 @@ These forces collide the moment your lakehouse grows past a single engine.
 TIP: Gartner estimates that 64 % of object-storage leaks in 2024 were caused by
 hand-crafted policy work-arounds like the three above.
 
-=== 3. Polaris Credential Vending — *Table-Level* RBAC without Sidecars
+=== Polaris Credential Vending — *Table-Level* RBAC without Sidecars
 
 image::CatalogVending.png[align=center, role=diagram]
 
@@ -463,6 +463,7 @@ The User that polaris will use to assume the role:
 ----
 
 The Role that Polaris will assume to get access to the S3 Resources:
+
 ----
 # aws --profile polaris-root iam list-roles
 {
@@ -492,8 +493,7 @@ The Role that Polaris will assume to get access to the S3 Resources:
 }
 ----
 
-The Role Policy that defines what S3 resources that Polaris can Access once it
-assumes the Role:
+The Role Policy that defines what S3 resources that Polaris can Access once it assumes the Role:
 
 ----
 # aws --profile polaris-root iam list-role-policies --role-name client
@@ -526,7 +526,7 @@ assumes the Role:
 
 == Deploy the Lab Analytical Container Stack
 
-== Introduction
+=== Introduction
 
 With storage and IAM wiring complete, bring the *analytic tier* online.
 One Podman‑Compose file spins up four services:
@@ -565,6 +565,7 @@ What happens under the hood:
 === Verification
 
 We can run the `podman ps` command from the terminal to get a list of running containers:
+
 ----
 # podman ps
 CONTAINER ID  IMAGE                                           COMMAND               CREATED      STATUS                PORTS                             NAMES
@@ -758,7 +759,6 @@ Follow the notebook cells in order.  Each cell contains explanatory markdown alo
 
 By the end of this notebook you will have run a full end‑to‑end Spark data pipeline—demonstrating raw ingest, fine‑grained RBAC, and PII protection—all within an interactive, repeatable environment.
 
-
 == Access the same Data Pipeline Tables with Different Query Engines (Trino)
 
 Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_ns` schema—running as the **Engineer** persona—to:
@@ -780,9 +780,9 @@ bash /root/lakehouse/trino-cli.sh
 
 You should see a prompt like the following, using this prompt we will run our querys:
 
-====
+----
 trino:prod_ns>
-====
+----
 
 === Find duplicate “Soda” rows in the RAW table
 
@@ -875,9 +875,9 @@ HAVING COUNT(*) > 1;
 
 Expected output:
 
-====
+----
 (0 rows)
-====
+----
 
 At this point you have:
 
@@ -888,14 +888,86 @@ At this point you have:
 
 This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.
 
+== Using Apache Superset to build visualizations to gain insights into our data
+=== Lab Guide – Building “Top‑10 Products by Revenue” in Superset
 
+=== Goal
+Create a bar chart that shows the ten products with the highest revenue and place it on the existing *Sales Overview* dashboard (or a new dashboard if you prefer).
 
-[IMPORTANT]
-====
-From this point forward, the guide will help you fix the issues one by one. **We recommend that you first try resolving the cluster problems on your own.** If you get stuck, refer to this guide for assistance.
-====
+NOTE: Replace screenshot placeholders such as `image::step‑02.png[]` with your own images after you capture them.
 
+===  Query the data in **SQL Lab**
 
-[TIP]
-====
-====
+Navigate to menu:SQL[SQL Lab → SQL Editor].
+In the *Database* drop‑down, choose **Trino (Iceberg)**. +
+  _Schema_ may auto‑fill to `prod_ns`; if not, pick it manually.
+Paste the query and click the *Run* ▶ button.
+
+[source,sql]
+----
+SELECT
+    product_name,
+    SUM(total) AS revenue
+FROM prod_ns.products_gold
+GROUP BY product_name
+ORDER BY revenue DESC
+LIMIT 10;
+----
+
+Verify you get exactly 10 rows in the results panel. +
+image::step‑01.png[Query results,600]
+
+===  Save the query as a dataset
+
+Click the *Save* button above the results → **Save as dataset**.
+Fill in:
+  * *Dataset name* :: `top10_products_revenue`
+  * *Database* :: **Trino (Iceberg)**
+  * *Schema* :: `prod_ns`
+Press btn:[Save]. You will see a toast “Dataset saved”.
+image::step‑02.png[Save dataset dialog,500]
+
+===  Explore and build the chart
+
+. In the success toast, click **Explore** (or menu:Actions[Explore] next to the new dataset).
+  Superset opens the Chart Builder with the dataset already selected.
+. In the *Choose chart type* gallery, click **Bar Chart**.
+
+==== Configure the *Data* tab
+
+|===
+|Control |Value |How
+
+|*X‑axis* |`product_name` |Drag the column from the left column list.
+|*Metrics* |`revenue` |Drag the metric; remove `COUNT(*)` if present.
+|*Sort by* |`revenue` ↓ (descending)|Drag `revenue` to the field; keep Desc.
+|*Row limit* |`10` |Optional—keeps it to top‑10.
+|===
+
+Click btn:[Update chart]. +
+image::step‑03.png[Populated Data tab,600]
+
+==== Tidy up in the *Customize* tab (optional)
+
+* *Y‑axis title* :: `Revenue ($)`
+* *Y‑axis format* :: `$.2f`
+* Pick a colour scheme you like.
+
+Click btn:[Update chart] again to preview.
+
+=== Save the chart and add to a dashboard
+
+Click btn:[Save].
+Fill in:
+  * *Chart name* :: `Top‑10 Products by Revenue`
+  * *Add to dashboard* ::
+    ** If *Sales Overview* exists → choose it.
+    ** Otherwise → **+ New dashboard** → `Sales Overview`.
+Click btn:[Save & Go to dashboard].
+
+Superset redirects you to the dashboard in *Edit* mode with your new bar chart already placed. Resize or drag to the desired position, then click btn:[Save] in the dashboard header.
+
+image::step‑04.png[Dashboard with new chart,700]
+
+You’ve successfully added an interactive visual to your dashboard using nothing but SQL Lab and the chart builder—well done!
+

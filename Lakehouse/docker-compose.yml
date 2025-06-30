@@ -41,8 +41,7 @@ services:
       - ./trino/catalog:/etc/trino/catalog
     environment:
       - JAVA_TOOL_OPTIONS=-Duser.timezone=UTC
-
-
+      - HTTP_SERVER_AUTHENTICATION_ALLOW_INSECURE_OVER_HTTP=true
   spark:
     image: bitnami/spark:3.5
     depends_on:
@@ -74,9 +73,10 @@ services:
       - ./notebooks:/home/jovyan/work
     container_name: jupiter
 
-
   superset:
-    image: apache/superset:latest
+    build:
+      context: .
+      dockerfile: ./superset/Dockerfile
     container_name: superset
     depends_on:
       - trino
@@ -99,6 +99,7 @@ services:
 
     volumes:
       - superset_home:/home/superset
+      - ./superset:/app/import
 
     command: >
       /bin/bash -eux -c '
@@ -113,9 +114,13 @@ services:
           --lastname  Admin2 \
           --email     admin@admin.com \
           --password  admin &&
-
+        uv pip install --no-cache-dir sqlalchemy-trino trino
+        superset import-datasources -p /app/import/superset_dataset.zip  --username admin
+        superset import-dashboards -p /app/import/superset_dash.zip --username admin
         # 3) finally launch the web server
         superset run -h 0.0.0.0 -p 8088
+
       '
 volumes:
   superset_home: {}
+
