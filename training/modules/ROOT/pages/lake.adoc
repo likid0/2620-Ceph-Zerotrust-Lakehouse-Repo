@@ -27,7 +27,9 @@ one-off security plug-ins.
 The sections below dissect the problem, evaluate common but inadequate
 approaches, and show how Polaris resolves it through credential vending.
 
-=== Three Forces Pulling You Apart
+===  Core Challenge for Data Lakehouse Access Control
+
+image::Core_challenge.png[align=center, role=diagram]
 
 [cols="25,75",frame=none,grid=rows]
 |===
@@ -46,11 +48,10 @@ approaches, and show how Polaris resolves it through credential vending.
   that throttles throughput.
 |===
 
-These forces collide the moment your lakehouse grows past a single engine.
-
-=== Common “Fixes” That Don’t Really Fix Anything
+=== Different Approaches that fall short of solving the Access Control Challenge posed by Data Lakehouses
 
 .Kubernetes & Namespace-per-Bucket Silos
+image::Namespace.png[align=center, role=diagram]
 [%autowidth,role=step]
 |===
 |*Pattern* |One bucket + one secret _per_ namespace
@@ -60,6 +61,8 @@ These forces collide the moment your lakehouse grows past a single engine.
 |===
 
 .PEP Only Inside Each Engine
+image::Engine.png[align=center, role=diagram]
+
 [%autowidth,role=step]
 |===
 |*Pattern* |Add a Policy Enforcement Point (PEP) plug-in to Trino, Spark, …
@@ -68,7 +71,8 @@ These forces collide the moment your lakehouse grows past a single engine.
 |*Result* | ∞ code paths, inconsistent policy, hard audits.
 |===
 
-.Reverse-Proxy in Front of RGW
+.PEP at the Reverse-Proxy in Front of the Storage Layer
+image::pepproxy.png[align=center, role=diagram]
 [%autowidth,role=step]
 |===
 |*Pattern* |Send every S3 call through a smart proxy that checks ACLs.
@@ -76,9 +80,6 @@ These forces collide the moment your lakehouse grows past a single engine.
 |*Breaks when…* |90 TB/h ingest hits the proxy; now the proxy *is* the bottleneck.
 |*Result* |Scale pain + another SPOF in the data path.
 |===
-
-TIP: Gartner estimates that 64 % of object-storage leaks in 2024 were caused by
-hand-crafted policy work-arounds like the three above.
 
 === Polaris Credential Vending — *Table-Level* RBAC without Sidecars
 
@@ -95,13 +96,10 @@ only the tables that executor may touch.
 
 *What you gain*
 
-* **SQL-style grants** (`GRANT SELECT`, `GRANT INSERT`) that analysts recognise.
-* **Least-privilege tokens** valid for minutes, not months.
-* **Engine-agnostic** – Spark, Trino, Flink all speak the same Iceberg
-metadata, so one policy fits all.
-* **Full speed** – the executor streams Parquet directly from RGW.
-
-That is *governance at lake-speed*.
+* **SQL-style grants** (`GRANT SELECT`, `GRANT INSERT`) with table level granularity.
+* **Least-privilege tokens** Credentials are short-lived, valid for minutes, not months. And with the least priveledges required
+* **Engine-agnostic** – Spark, Trino, Flink all speak the same Iceberg metadata, so one policy fits all, The Icerbeg catalog is the source of truth.
+* **Full speed** – the executor streams Parquet directly from RGW, no proxys needed.
 
 
 == Lab Introduction
@@ -110,8 +108,7 @@ That is *governance at lake-speed*.
 In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on *Ceph Object Gateway (RGW)* and is governed by the *Polaris* data‑catalog.  
 You will automate the infrastructure with Terraform, ingest data with Spark, query it with Trino, and visualise it in Superset—while watching catalog‑level RBAC enforce least‑privilege at every step.
 
-=== Why are we doing all this?
-*A retail‑analytics story in four short scenes*
+=== Context for our Real Life Use Case: retail‑analytics
 
 Imagine you are the data team for **FreshGoods**, a mid‑size grocery chain that
 ships online orders from 40 local stores.  Every night each store uploads a
@@ -124,10 +121,10 @@ CSV “drop” to Ceph RGW containing the day’s *product movement* log:
 * `email`      • customer loyalty‑card e‑mail (PII we must protect)
 * timestamps, etc.
 
-Your mission: turn those raw files into insight the business can act on **by
-9 a.m.**—without ever letting unauthorised eyes near the PII.
+*Your mission in this lab:* turn those raw files into insight the business can
+act on 9 a.m.**—without ever letting unauthorised eyes near the PII.
 
-We will walk that journey in the lab, compressed into 90 minutes:
+We will walk you through that journey in the lab, compressed into 90 minutes:
 
 . **Ingest (Engineer ➜ Spark)**
   The *data‑engineer* persona lands last night’s CSV into an **Iceberg RAW
@@ -155,31 +152,17 @@ retailer might run—just shrunk to one bucket, two tables, and four personas so
 we can see the whole life‑cycle in a single sitting.
 
 
-=== What you will build
+=== Lab Workflow
 
-[source,mermaid]
-----
-flowchart TD
-    subgraph Ceph_UI ["Ceph dashboard"]
-        CD1["Login"] --> CD2["Create RGW account & root user"]
-    end
-    subgraph IaC ["Terraform"]
-        TF1["ceph/ bucket + IAM"] --> TF2["polaris/ principals, grants, tables"]
-    end
-    subgraph Containers ["Runtime services"]
-        DK1["docker compose up → Polaris • Trino • Jupyter • Superset"]
-    end
-    subgraph Pipeline ["Data pipeline"]
-        direction LR
-        E1["Engineer → products_raw (Spark)"]
-        C1["Compliance → products_gold (Spark)"]
-        A1["Analyst → query (Trino)"]
-        A2["Analyst → dashboard (Superset)"]
-    end
-    CD2 --> TF1
-    TF2 --> DK1
-    DK1 --> E1 --> C1 --> A1 --> A2
-----
+image::workflow_lab.png[align=center, role=diagram]
+. *Login to Ceph Dashboard* – create RGW account & root user.
+. *Run Terraform (`ceph/`)* – wire bucket & IAM.
+. *Start containers* – Polaris, Trino, Jupyter, Superset in one command.
+. *Run Terraform (`polaris/`)* – create catalog, principals, RAW + GOLD tables.
+. *Engineer persona* – ingest `products_raw` in a Jupyter notebook.
+. *Compliance persona* – mask PII into `products_gold` in a Jupyter notebook.
+. *Analyst persona* – query GOLD via Trino and craft a Superset dashboard.
+
 
 === Core skills you’ll practise
 
@@ -199,22 +182,11 @@ flowchart TD
 | Enforce role‑based access with Polaris tokens; watch failures when a role steps outside its lane.
 
 | *Analytics*
-| Query the same Iceberg tables from Trino CLI and render a Superset dashboard—all without additional credentials.
+| Query the same Iceberg tables from Trino CLI
 
-| *Lifecycle hygiene*
-| Tear everything down cleanly with `./demo.sh destroy`.
+| *Visualization*
+| Act on your dataset and create Graphs with Apache Superset 
 |===
-
-=== Lab flow at a glance
-
-. *Login to Ceph Dashboard* – create RGW account & root user.  
-. *Run Terraform (`ceph/`)* – wire bucket & IAM.  
-. *Run Terraform (`polaris/`)* – create catalog, principals, RAW + GOLD tables.  
-. *Start containers* – Polaris, Trino, Jupyter, Superset in one command.  
-. *Engineer persona* – ingest `products_raw` in a Jupyter notebook.  
-. *Compliance persona* – mask PII into `products_gold`.  
-. *Analyst persona* – query GOLD via Trino and craft a Superset dashboard.  
-. *Wrap‑up* – destroy resources and recap key take‑aways.
 
 === Estimated time
 
@@ -222,15 +194,13 @@ flowchart TD
 
 === Provided for you
 
-* Pre‑deployed IBM Storage Ceph RGW cluster.  
+* Pre‑deployed IBM Storage Ceph cluster with RGW(Object Storage Endpoint) runnig.  
 * Lab repository with Terraform code, notebooks, helper scripts, and a 200‑row sample CSV.  
-* Pre‑generated Polaris tokens for the three personas.
 
 == Checking the current state of the lab
 
-If you are reading this doc, you should have your IBM Storage Ceph
-Troubleshooting TechZone Lab up and running. If that is not the case, please go
-to the IBM Storage Ceph Tech-Zone Collection and Order the troubleshooting Lab https://techzone.ibm.com/collection/64b92c8897187f0017773310)[TechZone Lab Access]
+If you are reading this doc, you should have your IBM Storage Ceph Lab up and running. If that is not the case, please go
+to the IBM Storage Ceph Tech-Zone Collection and Order the Lab https://techzone.ibm.com/collection/64b92c8897187f0017773310)[TechZone Lab Access]
 
 We must open a CLI terminal in our workstation machine and sudo to run the
 lab commands as the `ROOT` user. The workstation has the required ceph client
@@ -261,15 +231,26 @@ $ sudo -i
     client:   85 B/s rd, 0 op/s rd, 0 op/s wr
 ----
 
+From the previous command we can verify that we have a healthy running Ceph Cluster amd it has RGW(S3 endpoint) deployed and active
+
 == Creating the required S3 IAM Account and Root Account User
 
 === Creating the IAM Account
+
+----
 radosgw-admin account create --account-name=analytics
+----
+
 === Creating the Root User for the IAM Account
+
+----
 radosgw-admin user create --uid=analytics_root --display-name=root_analytics_user --account-id=RGW59183818904979875 --account-root  --access-key=demo --secret-key=demo
+----
+
 === Creating the `polarisdemo` bucket
+----
 aws --profile polaris-root s3 mb s3://polarisdemo
-=== Verification
+----
 
 
 == Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources
@@ -331,9 +312,10 @@ from the CLI you can get your Account ID with:
 ]
 ```
 
-Then edit the /root/terraform/ceph/terraform.tfvars and modify the Account ID
+Then edit the /root/terraform/ceph/terraform.tfvars and modify the Account ID:
 
-# cat terraform.tfvars
+----
+# cat /root/terraform/ceph/terraform.tfvars
 # Ceph object-gateway (RGW) HTTPS endpoint, used for S3 **and** STS/IAM calls
 ceph_endpoint       = "http://ceph-node2"
 
@@ -349,6 +331,7 @@ account_arn         = "RGW59183818904979875"  <<----- Modify this one!
 
 # Object-storage URI the Polaris container should treat as its warehouse
 location            = "s3://polarisdemo"
+----
 
 
 === Run Terraform
@@ -367,14 +350,12 @@ If you have never used Terraform before, think of the workflow as:
 
 Open a terminal on the lab workstation and change to the module directory:
 
-[source,bash]
 ----
 # cd /root/terraform/ceph
 ----
 
 Initialise the working directory (runs once per clone):
 
-[source,bash]
 ----
 # terraform init
 ----
@@ -385,7 +366,6 @@ ready.
 
 Preview the changes (optional but recommended):
 
-[source,bash]
 ----
 # terraform plan
 ----
@@ -396,7 +376,6 @@ bucket name and account ID.
 
 Apply the configuration:
 
-[source,bash]
 ----
 # terraform apply
 ----
@@ -421,13 +400,10 @@ location         = "s3://polarisdemo"
 role_arn         = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client"
 ----
 
-Copy these values—especially `admin_access_key`, `admin_secret_key`,
-`location`, and `role_arn`—into the next Terraform module that provisions
-Polaris.
-
 ==== What just happened?
-* A warehouse bucket (`polarisdemo`) was confirmed (or created).
-* An IAM user `polaris/catalog/admin` and its access keys were generated.
+* An S3 bucket (`polarisdemo`) was confirmed (or created) in our Ceph Cluster.
+* An IAM user `polaris/catalog/admin` and its access keys were generated inside
+  our IAM Account.
 * A least‑privilege IAM role `polaris/catalog/client` with an inline S3 policy
   was created.
 * Terraform wrote the resource IDs and ARNs to `terraform.tfstate` and echoed
@@ -541,7 +517,6 @@ One Podman‑Compose file spins up four services:
 Open a terminal in the repo root and run the following command to start all our
 required services using podman-compose:
 
-[source,bash]
 ----
 /root/scripts/demo.sh containers
 ----
@@ -580,12 +555,13 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 == Bootstrap a Polaris data catalog via Terraform
 
 === Introduction
-Our FreshGoods pipeline already has **storage** (Ceph buckets) and **compute**
-(Spark, Trino, Superset).  What it still lacks is a *brain*—a catalog that knows
-*which tables exist, who may touch them, and how credentials are issued*.
+Our FreshGoods pipeline already has **storage** (a Ceph bucket `polarisdemo`) and **compute**
+(Spark, Trino, Superset) Containers runing.  What it still lacks is a
+*brain/source of truth* —a catalog that knows *which tables exist, who may touch them, and how credentials are issued*.
 
 That brain is **Polaris**.  In this section you’ll run the `polaris/`
-Terraform module to codify the governance rules you just heard in the story:
+Terraform module to automate the governance rules for our Example Data
+Pipeline:
 
 *Nightly product‑movement CSV drops in → PII masked → morning dashboard out.*
 
@@ -594,7 +570,7 @@ Terraform module to codify the governance rules you just heard in the story:
 * **Catalog `prod`** → points at the `s3://polarisdemo` warehouse bucket.
 * **Namespace `prod_ns`** → think database / schema.
 * **Iceberg RAW & GOLD tables**
-  `products_raw` (ingested CSV) → `products_gold` (curated parquet).
+  `products_raw` (ingested CSV Table) → `products_gold` (anonymized and curated parquet table).
 * **Four personas (principals)**
   `admin`, `engineer`, `compliance`, `analyst`.
 * **Catalog roles & grants** that enforce least‑privilege:
@@ -606,9 +582,8 @@ Terraform module to codify the governance rules you just heard in the story:
   | *Analyst*    | read **GOLD** |
   | *Admin*      | everything (`catalog_admin`) |
 
-* **Short‑lived OAuth 2 tokens** for each persona, exported as Terraform
-  outputs so your notebook, Trino CLI, and Superset pick them up
-  automatically—no copy‑pasting secrets.
+* Authentication tou the catalog happens with **Short‑lived OAuth 2 tokens** for each persona, exported as Terraform
+  outputs so your different Query Engines: notebook, Trino CLI, and Superset pick them up automatically—no copy‑pasting secrets.
 
 === Modify Variables
 
@@ -629,7 +604,7 @@ You can then edit the terraform variabled file and use your labs role ARN:
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
-  default     = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client"
+  default     = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client" < --- MODIFY HERE
 }
 ----
 
@@ -637,34 +612,16 @@ The rest of the file variables are fine with the defaults, no need to change the
 
 === Run Terraform
 
-Everything Polaris needs is now in place:
+Everything Polaris needs is now in place: Open a terminal, change to the module directory, and initialise Terraform:
 
-* `polaris/terraform.tfvars` was auto‑generated by *demo.sh*
-  (warehouse URI, S3 role ARN, endpoint, profile name).
-* The Polaris service is healthy at http://localhost:8182.
-
-Open a terminal, change to the module directory, and initialise Terraform:
-
-[source,bash]
 ----
 # cd ~/terraform/polaris 
 # terraform init
 Terraform has been successfully initialized!
 ----
 
-(Optional) preview the execution plan:
-
-[source,bash]
-----
-terraform plan
-----
-
-You will see resources such as `polaris_catalog.prod` and
-`polaris_table.products_raw` in the _“to add”_ section; nothing is created yet.
-
 Apply the configuration:
 
-[source,bash]
 ----
 terraform apply
 ----
@@ -687,10 +644,10 @@ analyst_token = <sensitive>
 Behind the scenes Terraform has:
 
 * created catalog **prod** and namespace **prod_ns**
-* registered empty tables **products_raw** and **products_gold**
-* minted four principals with role bindings and grants
-* produced OAuth tokens that *demo.sh* already copied into
-  `notebooks/tokens.json` and the Trino catalog properties
+* created and registered two empty tables **products_raw** and
+  **products_gold** with their schemas
+* minted four principals(users) with role bindings and grants
+* produced OAuth tokens for our Users that our Query Engines will consume
 
 You are ready to ingest data in the next chapter.
 
@@ -700,7 +657,6 @@ You are ready to ingest data in the next chapter.
 
 In your shell, point at the Polaris host and port you used in Terraform:
 
-[source,bash]
 ----
 export POLARIS_HOST=localhost
 export POLARIS_PORT=8181
@@ -710,7 +666,6 @@ export POLARIS_PORT=8181
 
 We’ll use the “engineer” token for this example (you can repeat for any persona):
 
-[source,bash]
 ----
 cd /root/terraform/polaris
 export DEMO_TOKEN=$(terraform output -raw engineer_token)
@@ -900,7 +855,6 @@ NOTE: Replace screenshot placeholders such as `image::step‑02.png[]` with your
 
 Navigate to menu:SQL[SQL Lab → SQL Editor].
 In the *Database* drop‑down, choose **Trino (Iceberg)**. +
-  _Schema_ may auto‑fill to `prod_ns`; if not, pick it manually.
 Paste the query and click the *Run* ▶ button.
 
 [source,sql]
@@ -915,23 +869,25 @@ LIMIT 10;
 ----
 
 Verify you get exactly 10 rows in the results panel. +
-image::step‑01.png[Query results,600]
+image::superset1.png[Query results,600]
 
 ===  Save the query as a dataset
 
 Click the *Save* button above the results → **Save as dataset**.
+image::superset2.png[Save dataset dialog]
 Fill in:
   * *Dataset name* :: `top10_products_revenue`
   * *Database* :: **Trino (Iceberg)**
-  * *Schema* :: `prod_ns`
 Press btn:[Save]. You will see a toast “Dataset saved”.
-image::step‑02.png[Save dataset dialog,500]
+image::superset3.png[Save Dataset]
 
 ===  Explore and build the chart
 
 . In the success toast, click **Explore** (or menu:Actions[Explore] next to the new dataset).
   Superset opens the Chart Builder with the dataset already selected.
 . In the *Choose chart type* gallery, click **Bar Chart**.
+image::Superset4.png[Pie Chart,600]
+
 
 ==== Configure the *Data* tab
 
@@ -945,7 +901,7 @@ image::step‑02.png[Save dataset dialog,500]
 |===
 
 Click btn:[Update chart]. +
-image::step‑03.png[Populated Data tab,600]
+image::Superset5.png[Populated Data tab,600]
 
 ==== Tidy up in the *Customize* tab (optional)
 
@@ -954,6 +910,7 @@ image::step‑03.png[Populated Data tab,600]
 * Pick a colour scheme you like.
 
 Click btn:[Update chart] again to preview.
+image::superset6.png[Advanced,600]
 
 === Save the chart and add to a dashboard
 
@@ -964,10 +921,11 @@ Fill in:
     ** If *Sales Overview* exists → choose it.
     ** Otherwise → **+ New dashboard** → `Sales Overview`.
 Click btn:[Save & Go to dashboard].
+image::superset7.png[Advanced,600]
 
 Superset redirects you to the dashboard in *Edit* mode with your new bar chart already placed. Resize or drag to the desired position, then click btn:[Save] in the dashboard header.
 
-image::step‑04.png[Dashboard with new chart,700]
+image::Superset8.png[Dashboard with new chart,700]
 
 You’ve successfully added an interactive visual to your dashboard using nothing but SQL Lab and the chart builder—well done!
 
