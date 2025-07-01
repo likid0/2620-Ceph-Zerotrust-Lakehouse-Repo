@@ -123,34 +123,9 @@ table {
     display: flex;
   }
 }
-.nav-container {
-  position: fixed;
-  top: 3.5rem;
-  left: 0;
-  width: 100%;
-  font-size: 0.94444rem;
-  z-index: 1;
-  visibility: hidden;
-}
-@media screen and (min-width: 769px) {
-  .nav-container {
-    width: 15rem;
-  }
-}
-@media screen and (min-width: 1024px) {
-  .nav-container {
-    font-size: 0.86111rem;
-    -webkit-box-flex: 0;
-    -ms-flex: none;
-    flex: none;
-    position: static;
-    top: 0;
-    visibility: visible;
-  }
-}
-.nav-container.is-active {
-  visibility: visible;
-}
+
+.nav-container           { display:none !important; }
+
 .nav {
   background: #fafafa;
   position: relative;

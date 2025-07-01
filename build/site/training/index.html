@@ -13,15 +13,10 @@
   <button id="toggle-nav" class="lab-nav-toggle" title="Toggle navigation">☰</button>
   <nav class="navbar">
     <div class="navbar-brand">
-      <a class="navbar-item" href="https://docs.ceph.com/en/latest/" target="_blank" style="display: flex; align-items: center; gap: 20px;">
+      <a class="navbar-item" href=""https://www.ibm.com/docs/en/storage-ceph/8.1.0 target="_blank" style="display: flex; align-items: center; gap: 20px;">
           <img src="../_/img/header_logo_reverse.svg" height="48px" alt="Ceph">
           <span style="color: white; font-family: 'Roboto', sans-serif; font-size: 1.2rem; font-weight: 500;"> IBM Storage Ceph</span>
       </a>
-      <button class="navbar-burger" data-target="topbar-nav">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
     </div>
     <div id="topbar-nav" class="navbar-menu">
       <div class="navbar-end">
@@ -55,24 +50,7 @@
 <div class="nav-container" data-component="training" data-version="master">
   <aside class="nav">
     <div class="panels">
-<div class="nav-panel-menu is-active" data-panel="menu">
-  <nav class="nav-menu">
-    <button class="nav-menu-toggle" aria-label="Toggle expand/collapse all" style="display: none"></button>
-    <h3 class="title"><a href="index.html">Tech-Zone IBM Storage</a></h3>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="0">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Troubleshooting Workshop</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="1">
-    <a class="nav-link" href="lake.html">IBM Storage Ceph ZeroTrust DataLakehouse </a>
-  </li>
-</ul>
-  </li>
-</ul>
-  </nav>
-</div>
-<div class="nav-panel-explore" data-panel="explore">
+<div class="nav-panel-explore is-active" data-panel="explore">
   <div class="context">
     <span class="title">Tech-Zone IBM Storage</span>
     <span class="version">master</span>
@@ -104,106 +82,1564 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_zerotrus_data_lakehouse">1. ZeroTrus Data LakeHouse</a></li>
+<li><a href="#_why_governance_is_a_complex_topic_to_solve_in_lakehouse_deployments">2. Why Governance is a complex topic to solve in Lakehouse deployments?</a>
+<ul class="sectlevel2">
+<li><a href="#_core_challenge_for_data_lakehouse_access_control">2.1. Core Challenge for Data Lakehouse Access Control</a></li>
+<li><a href="#_different_approaches_that_fall_short_of_solving_the_access_control_challenge_posed_by_data_lakehouses">2.2. Different Approaches that fall short of solving the Access Control Challenge posed by Data Lakehouses</a></li>
+<li><a href="#_polaris_credential_vending_table_level_rbac_without_sidecars">2.3. Polaris Credential Vending — <strong>Table-Level</strong> RBAC without Sidecars</a></li>
+</ul>
+</li>
+<li><a href="#_lab_introduction">3. Lab Introduction</a>
+<ul class="sectlevel2">
+<li><a href="#_context_for_our_real_life_use_case_retailanalytics">3.1. Context for our Real Life Use Case: retail‑analytics</a></li>
+<li><a href="#_lab_workflow">3.2. Lab Workflow</a></li>
+<li><a href="#_core_skills_youll_practise">3.3. Core skills you’ll practise</a></li>
+<li><a href="#_estimated_time">3.4. Estimated time</a></li>
+<li><a href="#_provided_for_you">3.5. Provided for you</a></li>
+</ul>
+</li>
+<li><a href="#_checking_the_current_state_of_the_lab">4. Checking the current state of the lab</a></li>
+<li><a href="#_creating_the_required_s3_iam_account_and_root_account_user">5. Creating the required S3 IAM Account and Root Account User</a>
+<ul class="sectlevel2">
+<li><a href="#_creating_the_iam_account">5.1. Creating the IAM Account</a></li>
+<li><a href="#_creating_the_root_user_for_the_iam_account">5.2. Creating the Root User for the IAM Account</a></li>
+<li><a href="#_creating_the_polarisdemo_bucket">5.3. Creating the <code>polarisdemo</code> bucket</a></li>
+</ul>
+</li>
+<li><a href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources">6. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</a>
+<ul class="sectlevel2">
+<li><a href="#_why_automate_this_step">6.1. Why automate this step?</a></li>
+<li><a href="#_what_the_code_does">6.2. What the code does</a></li>
+<li><a href="#_modify_variables">6.3. Modify Variables</a></li>
+<li><a href="#_run_terraform">6.4. Run Terraform</a>
+<ul class="sectlevel3">
+<li><a href="#_what_just_happened">6.4.1. What just happened?</a></li>
+</ul>
+</li>
+<li><a href="#_verify">6.5. Verify</a></li>
+</ul>
+</li>
+<li><a href="#_deploy_the_lab_analytical_container_stack">7. Deploy the Lab Analytical Container Stack</a>
+<ul class="sectlevel2">
+<li><a href="#_introduction">7.1. Introduction</a></li>
+<li><a href="#_deployment_with_podman_compose_using_wrapper_script">7.2. Deployment with Podman Compose using wrapper script</a></li>
+<li><a href="#_verification">7.3. Verification</a></li>
+</ul>
+</li>
+<li><a href="#_bootstrap_a_polaris_data_catalog_via_terraform">8. Bootstrap a Polaris data catalog via Terraform</a>
+<ul class="sectlevel2">
+<li><a href="#_introduction_2">8.1. Introduction</a></li>
+<li><a href="#_what_the_module_builds">8.2. What the module builds</a></li>
+<li><a href="#_modify_variables_2">8.3. Modify Variables</a></li>
+<li><a href="#_run_terraform_2">8.4. Run Terraform</a></li>
+<li><a href="#_verify_2">8.5. Verify</a>
+<ul class="sectlevel3">
+<li><a href="#_export_your_polaris_endpoint">8.5.1. Export your Polaris endpoint</a></li>
+<li><a href="#_obtain_a_demo_user_token">8.5.2. Obtain a demo user token</a></li>
+<li><a href="#_list_all_tables_in_prodprod_ns">8.5.3. List all tables in prod/prod_ns</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#_data_pipeline_execution_with_jupiter_notebook">9. Data pipeline execution with Jupiter Notebook</a></li>
+<li><a href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino">10. Access the same Data Pipeline Tables with Different Query Engines (Trino)</a>
+<ul class="sectlevel2">
+<li><a href="#_1_connect_to_trino_cli">10.1. 1. Connect to Trino CLI</a></li>
+<li><a href="#_find_duplicate_soda_rows_in_the_raw_table">10.2. Find duplicate “Soda” rows in the RAW table</a></li>
+<li><a href="#_delete_the_extra_duplicates">10.3. Delete the extra duplicates</a></li>
+<li><a href="#_verify_the_duplicates_are_gone">10.4. Verify the duplicates are gone</a></li>
+</ul>
+</li>
+<li><a href="#_using_apache_superset_to_build_visualizations_to_gain_insights_into_our_data">11. Using Apache Superset to build visualizations to gain insights into our data</a>
+<ul class="sectlevel2">
+<li><a href="#_lab_guide_building_top10_products_by_revenue_in_superset">11.1. Lab Guide – Building “Top‑10 Products by Revenue” in Superset</a></li>
+<li><a href="#_goal">11.2. Goal</a></li>
+<li><a href="#_query_the_data_in_sqllab">11.3. Query the data in <strong>SQL Lab</strong></a></li>
+<li><a href="#_save_the_query_as_a_dataset">11.4. Save the query as a dataset</a></li>
+<li><a href="#_explore_and_build_the_chart">11.5. Explore and build the chart</a>
+<ul class="sectlevel3">
+<li><a href="#_configure_the_data_tab">11.5.1. Configure the <strong>Data</strong> tab</a></li>
+<li><a href="#_tidy_up_in_the_customize_tab_optional">11.5.2. Tidy up in the <strong>Customize</strong> tab (optional)</a></li>
+</ul>
+</li>
+<li><a href="#_save_the_chart_and_add_to_a_dashboard">11.6. Save the chart and add to a dashboard</a></li>
+</ul>
+</li>
+</ul>
+</div>
 <div class="paragraph title-highlight">
-<p>Welcome to the IBM Storage Ceph ZeroTrust LakeHouse</p>
-</div>
-<div class="paragraph">
-<p>The IBM Storage Ceph Troubleshooting workshop is an in-depth Ceph
-enablement that strives to provide you with a good understanding of the Core Ceph
-Concepts &amp; Architecture, The content of the workshop is a technical Hands-on  Break and Fix Lab.</p>
+<p>Welcome to the IBM Storage Ceph ZeroTrust LakeHouse Lab!</p>
 </div>
 <div class="sect1">
-<h2 id="_recommended_pre_requisites_before_starting_the_enablement"><a class="anchor" href="#_recommended_pre_requisites_before_starting_the_enablement"></a>Recommended Pre-Requisites before starting the enablement.</h2>
+<h2 id="_zerotrus_data_lakehouse"><a class="anchor" href="#_zerotrus_data_lakehouse"></a>1. ZeroTrus Data LakeHouse</h2>
 <div class="sectionbody">
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/CephS3Native.png" alt="CephS3Native">
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_governance_is_a_complex_topic_to_solve_in_lakehouse_deployments"><a class="anchor" href="#_why_governance_is_a_complex_topic_to_solve_in_lakehouse_deployments"></a>2. Why Governance is a complex topic to solve in Lakehouse deployments?</h2>
+<div class="sectionbody">
+<div class="paragraph lead">
+<p>Enterprises increasingly standardise on <strong>Ceph Object Storage</strong> as the
+S3-compatible landing zone for analytics.
+However, the moment <strong>multiple</strong> compute engines (Spark, Trino, Flink, AI
+notebooks) must operate on the <strong>same</strong> objects, a critical governance gap
+emerges:
+how to impose <strong>database-style, table-level privileges</strong> directly at the
+object layer, <strong>without</strong> introducing performance bottlenecks or an explosion of
+one-off security plug-ins.
+The sections below dissect the problem, evaluates common but inadequate
+approaches, and show how Polaris resolves it through credential vending.</p>
+</div>
+<div class="sect2">
+<h3 id="_core_challenge_for_data_lakehouse_access_control"><a class="anchor" href="#_core_challenge_for_data_lakehouse_access_control"></a>2.1. Core Challenge for Data Lakehouse Access Control</h3>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/Core_challenge.png" alt="Core challenge">
+</div>
+</div>
+<table class="tableblock frame-none grid-rows stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Database-style GRANTs</strong>
+  (what analysts expect)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">“Give me <code>GRANT SELECT ON products</code> like in Postgres or Snowflake.”</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Storage-level enforcement</strong>
+  (what Zero-Trust demands)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The security team insists the rule lives <strong>at the object layer</strong>, not
+  in ten different SQL engines.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Direct I/O paths</strong>
+  (what performance needs)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ETL jobs must read objects at wire-speed – no extra proxy hop
+  that throttles throughput.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_different_approaches_that_fall_short_of_solving_the_access_control_challenge_posed_by_data_lakehouses"><a class="anchor" href="#_different_approaches_that_fall_short_of_solving_the_access_control_challenge_posed_by_data_lakehouses"></a>2.2. Different Approaches that fall short of solving the Access Control Challenge posed by Data Lakehouses</h3>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/Namespace.png" alt="Namespace">
+</div>
+<div class="title">Figure 1. Kubernetes &amp; Namespace-per-Bucket Silos</div>
+</div>
+<table class="tableblock frame-all grid-all fit-content step">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">One bucket + one secret <em>per</em> namespace</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Looks good</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Strong isolation by default</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Breaks when…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Team <strong>Purple</strong> must read the <strong>Blue</strong> team’s raw bucket.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Result</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Either you copy data (costly) or copy secrets (scary).</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/Engine.png" alt="Engine">
+</div>
+<div class="title">Figure 2. PEP Only Inside Each Engine</div>
+</div>
+<table class="tableblock frame-all grid-all fit-content step">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Add a Policy Enforcement Point (PEP) plug-in to Trino, Spark, …</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Looks good</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Fine-grained rules <em>inside</em> that engine</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Breaks when…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A new engine arrives – you re-implement the plug-in <strong>again</strong>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Result</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">∞ code paths, inconsistent policy, hard audits.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/pepproxy.png" alt="pepproxy">
+</div>
+<div class="title">Figure 3. PEP at the Reverse-Proxy in Front of the Storage Layer</div>
+</div>
+<table class="tableblock frame-all grid-all fit-content step">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Pattern</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Send every S3 call through a smart proxy that checks ACLs.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Looks good</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Central control, classic pattern.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Breaks when…</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">90 TB/h ingest hits the proxy; now the proxy <strong>is</strong> the bottleneck.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Result</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Scale pain + another SPOF in the data path.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_polaris_credential_vending_table_level_rbac_without_sidecars"><a class="anchor" href="#_polaris_credential_vending_table_level_rbac_without_sidecars"></a>2.3. Polaris Credential Vending — <strong>Table-Level</strong> RBAC without Sidecars</h3>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/CatalogVending.png" alt="CatalogVending">
+</div>
+</div>
+<table class="tableblock frame-none grid-none stretch">
+<colgroup>
+<col style="width: 30%;">
+<col style="width: 70%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Source of truth</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polaris stores every Iceberg <strong>Table</strong> + its GRANT matrix.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Ask</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A Spark executor authenticates once to Polaris.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Answer</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Polaris returns a <strong>time-bound STS token</strong> whose S3 policy covers
+only the tables that executor may touch.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Enforce @ Ceph</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">RGW evaluates that policy – no extra proxy hop required.</p></td>
+</tr>
+</tbody>
+</table>
 <div class="paragraph">
-<p>Before completing this course, there are some previous Tech-Zone Labs that we
-would recommend doing first; here is the list of Storage Ceph training available in Tech-Zone
-We would recommend completing the following before starting this enablement:
-. <a href="https://techzone.ibm.com/my/reservations/create/6567862cba056800175b6279">Install and Configure a Ceph Cluster</a> : Learn to set up a robust IBM Storage Ceph environment from scratch and deploy the Object Storage service using the Dashboard.
-. <a href="https://techzone.ibm.com/my/reservations/create/66c880e5eff555001e6e3582">Explore Advanced Object Storage Features</a> : Dive deep into SSL configuration, bucket policies, audit logs, Storage Class Tiering, and lifecycle management to enhance the security and efficiency of your object storage.
-. <a href="https://techzone.ibm.com/my/reservations/create/66c882763c41c8001e807f3c">Experience Unified Storage</a> : Gain hands-on experience with Ceph’s unified storage capabilities, including Block (RBD), File (NFS), and Object (S3), showcasing its versatility as an all-in-one storage solution.
-These labs demonstrate how IBM Storage Ceph can meet diverse enterprise storage needs, providing a scalable, secure, and unified storage solution. By mastering the deployment and management of block, file, and object storage within a single platform, organizations can streamline their storage infrastructure, improve operational efficiency, and reduce costs while ensuring data availability and integrity across various workloads.</p>
+<p><strong>What you gain</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>SQL-style grants</strong> (<code>GRANT SELECT</code>, <code>GRANT INSERT</code>) with table level granularity.</p>
+</li>
+<li>
+<p><strong>Least-privilege tokens</strong> Credentials are short-lived, valid for minutes, not months. And with the least priveledges required</p>
+</li>
+<li>
+<p><strong>Engine-agnostic</strong> – Spark, Trino, Flink all speak the same Iceberg metadata, so one policy fits all, The Icerbeg catalog is the source of truth.</p>
+</li>
+<li>
+<p><strong>Full speed</strong> – the executor streams Parquet directly from RGW, no proxys needed.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_lab_introduction"><a class="anchor" href="#_lab_introduction"></a>3. Lab Introduction</h2>
+<div class="sectionbody">
+<div class="quoteblock abstract">
+<blockquote>
+In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on <strong>Ceph Object Gateway (RGW)</strong> and is governed by the <strong>Polaris</strong> data‑catalog.
+You will automate the infrastructure with Terraform, ingest data with Spark, query it with Trino, and visualise it in Superset—while watching catalog‑level RBAC enforce least‑privilege at every step.
+</blockquote>
+</div>
+<div class="sect2">
+<h3 id="_context_for_our_real_life_use_case_retailanalytics"><a class="anchor" href="#_context_for_our_real_life_use_case_retailanalytics"></a>3.1. Context for our Real Life Use Case: retail‑analytics</h3>
+<div class="paragraph">
+<p>Imagine you are the data team for <strong>FreshGoods</strong>, a mid‑size grocery chain that
+ships online orders from 40 local stores.  Every night each store uploads a
+CSV “drop” to Ceph RGW containing the day’s <strong>product movement</strong> log:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>product_id</code> • what was sold</p>
+</li>
+<li>
+<p><code>category</code>   • department (dairy, produce, pantry …)</p>
+</li>
+<li>
+<p><code>price</code></p>
+</li>
+<li>
+<p><code>quantity</code></p>
+</li>
+<li>
+<p><code>email</code>      • customer loyalty‑card e‑mail (PII we must protect)</p>
+</li>
+<li>
+<p>timestamps, etc.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>Also the following resources can be very handy if you feel a bit lost with the tasks asked in the Lab!:</p>
+<p><strong>Your mission in this lab:</strong> turn those raw files into insight the business can
+act on 9 a.m.**—without ever letting unauthorised eyes near the PII.</p>
+</div>
+<div class="paragraph">
+<p>We will walk you through that journey in the lab, compressed into 90 minutes:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><a href="https://www.youtube.com/watch?v=PmLPbrf-x9g">Ceph Introduction by Sage</a></p>
+<p><strong>Ingest (Engineer ➜ Spark)</strong>
+The <strong>data‑engineer</strong> persona lands last night’s CSV into an <strong>Iceberg RAW
+table</strong> <code>products_raw</code> using Spark.  Nothing is filtered or masked yet.</p>
 </li>
 <li>
-<p><a href="https://www.redbooks.ibm.com/redpieces/pdfs/redp5721.pdf">IBM Storage Ceph Concepts and Architecture Guide Redbook</a></p>
+<p><strong>Curate &amp; protect (Compliance ➜ Spark)</strong>
+The <strong>compliance</strong> persona reads the RAW table, hashes the <code>email</code> column,
+calculates a <code>total = price * quantity</code>, and overwrites a clean
+<strong>GOLD table</strong> <code>products_gold</code>.
+They can still <strong>read</strong> RAW (audit duty) but only <strong>they</strong> can write GOLD.</p>
+</li>
+<li>
+<p><strong>Explore (Analyst ➜ Trino CLI)</strong>
+The <strong>analyst</strong> persona checks row counts and quick aggregations from Trino,
+confirming the overnight ingest ran.</p>
+</li>
+<li>
+<p><strong>Visualise (Analyst ➜ Superset)</strong>
+Finally the analyst refreshes a Superset dashboard showing <strong>Category sales
+vs. previous day</strong>—the chart the merchandisers see at roll‑call every
+morning.  The hashed emails never leave the lake; the analyst never sees PII.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>The glue that enforces who can touch what is <strong>Polaris</strong> CatalogI.</p>
+</div>
+<div class="paragraph">
+<p>By the end of the lab you’ll have a governed catalog exactly like a real
+retailer might run—just shrunk to one bucket, two tables, and four personas so
+we can see the whole life‑cycle in a single sitting.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_lab_workflow"><a class="anchor" href="#_lab_workflow"></a>3.2. Lab Workflow</h3>
+<div class="imageblock text-center diagram">
+<div class="content">
+<img src="_images/workflow_lab.png" alt="workflow lab">
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>Login to Ceph Dashboard</strong> – create RGW account &amp; root user.</p>
+</li>
+<li>
+<p><strong>Run Terraform (<code>ceph/</code>)</strong> – wire bucket &amp; IAM.</p>
+</li>
+<li>
+<p><strong>Start containers</strong> – Polaris, Trino, Jupyter, Superset in one command.</p>
+</li>
+<li>
+<p><strong>Run Terraform (<code>polaris/</code>)</strong> – create catalog, principals, RAW + GOLD tables.</p>
+</li>
+<li>
+<p><strong>Engineer persona</strong> – ingest <code>products_raw</code> in a Jupyter notebook.</p>
+</li>
+<li>
+<p><strong>Compliance persona</strong> – mask PII into <code>products_gold</code> in a Jupyter notebook.</p>
+</li>
+<li>
+<p><strong>Analyst persona</strong> – query GOLD via Trino and craft a Superset dashboard.</p>
 </li>
 </ol>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_core_skills_youll_practise"><a class="anchor" href="#_core_skills_youll_practise"></a>3.3. Core skills you’ll practise</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Pillar</th>
+<th class="tableblock halign-left valign-top">You’ll learn to…</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Storage</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create Ceph RGW buckets and IAM roles from the dashboard and Terraform.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Infrastructure‑as‑Code</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bootstrap all catalog objects (principals, grants, tables) with a single <code>terraform apply</code>.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Data Engineering</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Use Spark to ingest CSV → Iceberg and to overwrite snapshots safely.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Governance / Security</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Enforce role‑based access with Polaris tokens; watch failures when a role steps outside its lane.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Analytics</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Query the same Iceberg tables from Trino CLI</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Visualization</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Act on your dataset and create Graphs with Apache Superset</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_estimated_time"><a class="anchor" href="#_estimated_time"></a>3.4. Estimated time</h3>
+<div class="paragraph">
+<p><strong>90 minutes</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_provided_for_you"><a class="anchor" href="#_provided_for_you"></a>3.5. Provided for you</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Pre‑deployed IBM Storage Ceph cluster with RGW(Object Storage Endpoint) runnig.</p>
+</li>
+<li>
+<p>Lab repository with Terraform code, notebooks, helper scripts, and a 200‑row sample CSV.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
 </div>
 <div class="sect1">
-<h2 id="_looking_for_support_during_the_enablement"><a class="anchor" href="#_looking_for_support_during_the_enablement"></a>Looking for support during the enablement?</h2>
+<h2 id="_checking_the_current_state_of_the_lab"><a class="anchor" href="#_checking_the_current_state_of_the_lab"></a>4. Checking the current state of the lab</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Any questions related to the training can be asked on the <code>#ceph-help</code> channel on the <code>IBM Storage</code> workspace.</p>
+<p>If you are reading this doc, you should have your IBM Storage Ceph Lab up and running. If that is not the case, please go
+to the IBM Storage Ceph Tech-Zone Collection and Order the Lab <a href="https://techzone.ibm.com/collection/64b92c8897187f0017773310)">TechZone Lab Access</a></p>
+</div>
+<div class="paragraph">
+<p>We must open a CLI terminal in our workstation machine and sudo to run the
+lab commands as the <code>ROOT</code> user. The workstation has the required ceph client
+RPMs and the CephX admin keys for our deployment so that
+we can run most of the necessary commands for this lab from the workstation.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">$ sudo -i
+# ceph -s
+  cluster:
+    id:     09f357c6-b8d6-11ef-bbb7-02009a7a348a
+    health: HEALTH_OK
+
+  services:
+    mon: 4 daemons, quorum ceph-node1-675b5683b75e66c49dc8f254,ceph-node2-675b5683b75e66c49dc8f254,ceph-node3-675b5683b75e66c49dc8f254,ceph-node4-675b5683b75e66c49dc8f254 (age 9h)
+    mgr: ceph-node1-675b5683b75e66c49dc8f254.vadpyr(active, since 9h), standbys: ceph-node2-675b5683b75e66c49dc8f254.yuzazl
+    osd: 12 osds: 12 up (since 9h), 12 in (since 9h)
+    rgw: 1 daemon active (1 hosts, 1 zones)
+
+  data:
+    volumes: 1/1 healthy
+    pools:   9 pools, 465 pgs
+    objects: 250 objects, 456 KiB
+    usage:   856 MiB used, 119 GiB / 120 GiB avail
+    pgs:     465 active+clean
+
+  io:
+    client:   85 B/s rd, 0 op/s rd, 0 op/s wr</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>From the previous command we can verify that we have a healthy running Ceph Cluster amd it has RGW(S3 endpoint) deployed and active</p>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_start_the_lab"><a class="anchor" href="#_start_the_lab"></a>Start the Lab!!</h2>
+<h2 id="_creating_the_required_s3_iam_account_and_root_account_user"><a class="anchor" href="#_creating_the_required_s3_iam_account_and_root_account_user"></a>5. Creating the required S3 IAM Account and Root Account User</h2>
 <div class="sectionbody">
-<div class="admonitionblock important">
+<div class="sect2">
+<h3 id="_creating_the_iam_account"><a class="anchor" href="#_creating_the_iam_account"></a>5.1. Creating the IAM Account</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">radosgw-admin account create --account-name=analytics</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_root_user_for_the_iam_account"><a class="anchor" href="#_creating_the_root_user_for_the_iam_account"></a>5.2. Creating the Root User for the IAM Account</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">radosgw-admin user create --uid=analytics_root --display-name=root_analytics_user --account-id=RGW59183818904979875 --account-root  --access-key=demo --secret-key=demo</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_creating_the_polarisdemo_bucket"><a class="anchor" href="#_creating_the_polarisdemo_bucket"></a>5.3. Creating the <code>polarisdemo</code> bucket</h3>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">aws --profile polaris-root s3 mb s3://polarisdemo</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"><a class="anchor" href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"></a>6. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Before we launch Spark, Trino, or Polaris we need a secure <strong>landing zone</strong> inside Ceph’s Object Gateway (RGW).
+Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in <strong>Terraform</strong>—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.</p>
+</div>
+<div class="sect2">
+<h3 id="_why_automate_this_step"><a class="anchor" href="#_why_automate_this_step"></a>6.1. Why automate this step?</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Consistency &amp; repeatability</strong> – Everyone in the team provisions the <strong>exact</strong> same resources , every time, with a single command.</p>
+</li>
+<li>
+<p><strong>Idempotence</strong> – Running <code>terraform apply</code> tomorrow makes zero changes unless you changed the code.</p>
+</li>
+<li>
+<p><strong>Auditability</strong> – All security-sensitive artifacts (bucket names, IAM policies, ARNs) can live in Git—no tribal knowledge locked in a UI click-path.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_what_the_code_does"><a class="anchor" href="#_what_the_code_does"></a>6.2. What the code does</h3>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col>
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Block</th>
+<th class="tableblock halign-left valign-top">Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Variables (<code></strong>.tf</code> <code>variable</code> blocks)*</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Collect user-specific inputs such as the Ceph S3/STS endpoint, the credentials profile that can talk to RGW, and the bucket name that will back the Polaris catalog.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>AWS provider configured for Ceph</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Uses the standard <code>hashicorp/aws</code> provider but points its <code>s3</code>, <code>sts</code>, and <code>iam</code> endpoints to your Ceph cluster, and forces path-style S3 URLs so they work with RGW.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bucket (data or resource)</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Looks up—or optionally creates—the S3 bucket named in <code>var.bucket_name</code>.  The code is written with <code>data "aws_s3_bucket"</code> so it <strong>reads</strong> an already-provisioned bucket, but you can uncomment the <code>resource "aws_s3_bucket"</code> block to have Terraform create it instead.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>IAM user <code>polaris/catalog/admin</code></strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Creates a programmatic user that owns the catalog. Terraform outputs its <strong>access key</strong> and <strong>secret key</strong> so the next module (Polaris) can authenticate.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>IAM role <code>polaris/catalog/client</code></strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A role that the polaris catalogs assumes via <code>sts:AssumeRole</code> to vend a token
+to the Query Engine(Spark, Trino) asking for access to a Table. It contains a single inline policy (<code>catalog_client_policy</code>) granting <strong>only</strong> <code>s3:*</code> on your warehouse bucket.  Principle of least privilege in action.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Outputs</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">After <code>terraform apply</code> you get:
+  * <code>bucket_arn</code> – ARN of the warehouse bucket
+  * <code>account_arn</code> – Ceph pseudo-account ID (used in later trust policies)
+  * <code>location</code> – <code>s3://…</code> URI Polaris will register as its warehouse
+  * <code>role_arn</code> – ARN of the client role
+  * <code>admin_access_key</code> / <code>admin_secret_key</code> – keys for the admin user (the secret is marked <strong>sensitive</strong> so Terraform hides it in plan logs)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect2">
+<h3 id="_modify_variables"><a class="anchor" href="#_modify_variables"></a>6.3. Modify Variables</h3>
+<div class="paragraph">
+<p>The Ceph Terraform Variables file we need to edit is located in our desktop
+machine at <code>/root/terraform/ceph</code> with the name <code>terraform.tfvars</code>.</p>
+</div>
+<div class="paragraph">
+<p>You only need to modify the RGW Account ID to match te Account ID you created
+on your LAB Environment, the rest of the variables are already filled in for
+you.</p>
+</div>
+<div class="paragraph">
+<p>from the CLI you can get your Account ID with:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># radosgw-admin account list
+[
+    "RGW59183818904979875"
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then edit the /root/terraform/ceph/terraform.tfvars and modify the Account ID:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cat /root/terraform/ceph/terraform.tfvars
+# Ceph object-gateway (RGW) HTTPS endpoint, used for S3 **and** STS/IAM calls
+ceph_endpoint       = "http://ceph-node2"
+
+# Where Terraform’s AWS provider will read your access-key/secret-key pair
+credentials_path    = "~/.aws/credentials"
+credentials_profile = "polaris-root"
+
+# Name of the bucket that will become Polaris’ warehouse
+bucket_name         = "polarisdemo"
+
+# The numerical “account ID” that Ceph assigns when you ran `radosgw-admin account create`
+account_arn         = "RGW59183818904979875"  &lt;&lt;----- Modify this one!
+
+# Object-storage URI the Polaris container should treat as its warehouse
+location            = "s3://polarisdemo"</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_run_terraform"><a class="anchor" href="#_run_terraform"></a>6.4. Run Terraform</h3>
+<div class="paragraph">
+<p>With <code>terraform.tfvars</code> edited, you are ready to execute the automation.
+All commands below assume you are <strong>already on the lab workstation</strong> and that
+the code lives in <code>/root/terraform/ceph</code>.</p>
+</div>
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-important" title="Important"></i>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>The estimated time needed to go through the workshop is 90 minutes</p>
+<p>If you have never used Terraform before, think of the workflow as:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><strong>init</strong> – download plugins and build a <code>.terraform</code> working directory</p>
+</li>
+<li>
+<p><strong>plan</strong> – show what will change (dry‑run)</p>
+</li>
+<li>
+<p><strong>apply</strong> – make it so (and save state in <code>terraform.tfstate</code>)</p>
+</li>
+</ol>
 </div>
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>Start the IBM Storage Ceph ZeroTrust LakeHouse Lab and access the course material directly by clicking below:</p>
+<p>Open a terminal on the lab workstation and change to the module directory:</p>
 </div>
-<div class="paragraph btn btn-primary">
-<p><a href="lake.html" class="xref page">IBM Storage Ceph ZeroTrust LakeHouse - Start the Course Now!</a></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cd /root/terraform/ceph</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Initialise the working directory (runs once per clone):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># terraform init</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Terraform downloads the <strong>hashicorp/aws</strong> provider, points it to your Ceph
+endpoints, and prints <strong>“Terraform has been successfully initialized!”</strong> when
+ready.</p>
+</div>
+<div class="paragraph">
+<p>Preview the changes (optional but recommended):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># terraform plan</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see something like <code>Plan: 5 to add, 0 to change, 0 to destroy.</code>
+Nothing is created yet—this is just a dry‑run so you can double‑check the
+bucket name and account ID.</p>
+</div>
+<div class="paragraph">
+<p>Apply the configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># terraform apply</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Terraform re‑computes the plan and asks for confirmation.
+Type <code>yes</code> (or add <code>-auto-approve</code> to skip the prompt) and watch the resources
+appear.</p>
+</div>
+<div class="paragraph">
+<p>When the run finishes you will see output similar to:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-plain hljs" data-lang="plain">Apply complete! Resources: 5 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+account_arn      = "RGW59183818904979875"
+admin_access_key = "POLARISADMINACCESSKEY"
+admin_secret_key = (sensitive value)
+bucket_arn       = "arn:aws:s3:::polarisdemo"
+location         = "s3://polarisdemo"
+role_arn         = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client"</code></pre>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_what_just_happened"><a class="anchor" href="#_what_just_happened"></a>6.4.1. What just happened?</h4>
+<div class="ulist">
+<ul>
+<li>
+<p>An S3 bucket (<code>polarisdemo</code>) was confirmed (or created) in our Ceph Cluster.</p>
+</li>
+<li>
+<p>An IAM user <code>polaris/catalog/admin</code> and its access keys were generated inside
+our IAM Account.</p>
+</li>
+<li>
+<p>A least‑privilege IAM role <code>polaris/catalog/client</code> with an inline S3 policy
+was created.</p>
+</li>
+<li>
+<p>Terraform wrote the resource IDs and ARNs to <code>terraform.tfstate</code> and echoed
+the key ones as outputs.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verify"><a class="anchor" href="#_verify"></a>6.5. Verify</h3>
+<div class="paragraph">
+<p>From the terminal we can do a quick verification of the newly created Ceph
+Resources:</p>
+</div>
+<div class="paragraph">
+<p>Bucket:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root s3 ls
+2025-06-24 08:57:39 polarisdemo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The User that polaris will use to assume the role:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-users
+{
+    "Users": [
+        {
+            "Path": "/polaris/catalog/",
+            "UserName": "admin",
+            "UserId": "a193f75b-3b62-4996-b8a2-5ba89161ddb2",
+            "Arn": "arn:aws:iam::RGW59183818904979875:user/polaris/catalog/admin",
+            "CreateDate": "2025-06-24T10:01:58.283604Z"
+        }
+    ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Role that Polaris will assume to get access to the S3 Resources:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles
+{
+    "Roles": [
+        {
+            "Path": "/polaris/catalog/",
+            "RoleName": "client",
+            "RoleId": "e8596597-1a55-4a44-9b20-364c0682a3a7",
+            "Arn": "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client",
+            "CreateDate": "2025-06-24T10:01:58.286Z",
+            "AssumeRolePolicyDocument": {
+                "Statement": [
+                    {
+                        "Action": "sts:AssumeRole",
+                        "Effect": "Allow",
+                        "Principal": {
+                            "AWS": "arn:aws:iam::RGW59183818904979875:user/polaris/catalog/admin"
+                        }
+                    }
+                ],
+                "Version": "2012-10-17"
+            },
+            "Description": "",
+            "MaxSessionDuration": 3600
+        }
+    ]
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The Role Policy that defines what S3 resources that Polaris can Access once it assumes the Role:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-role-policies --role-name client
+{
+    "PolicyNames": [
+        "catalog_client_policy"
+    ]
+}
+[root@ceph-workstation-685988cc06f597e7ef15b041 ceph]# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
+{
+    "RoleName": "client",
+    "PolicyName": "catalog_client_policy",
+    "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Action": [
+                    "s3:*"
+                ],
+                "Effect": "Allow",
+                "Resource": [
+                    "arn:aws:s3:::polarisdemo/*",
+                    "arn:aws:s3:::polarisdemo"
+                ]
+            }
+        ]
+    }
+}</code></pre>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_other_interesting_links"><a class="anchor" href="#_other_interesting_links"></a>Other interesting Links</h2>
+<h2 id="_deploy_the_lab_analytical_container_stack"><a class="anchor" href="#_deploy_the_lab_analytical_container_stack"></a>7. Deploy the Lab Analytical Container Stack</h2>
 <div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction"><a class="anchor" href="#_introduction"></a>7.1. Introduction</h3>
+<div class="paragraph">
+<p>With storage and IAM wiring complete, bring the <strong>analytic tier</strong> online.
+One Podman‑Compose file spins up four services:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Polaris control‑plane and Iceberg REST catalog</p>
+</li>
+<li>
+<p>Trino worker for ad‑hoc SQL</p>
+</li>
+<li>
+<p>Jupyter Lab for Spark notebooks</p>
+</li>
+<li>
+<p>Superset for dashboards</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_deployment_with_podman_compose_using_wrapper_script"><a class="anchor" href="#_deployment_with_podman_compose_using_wrapper_script"></a>7.2. Deployment with Podman Compose using wrapper script</h3>
+<div class="paragraph">
+<p>Open a terminal in the repo root and run the following command to start all our
+required services using podman-compose:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">/root/scripts/demo.sh containers</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>What happens under the hood:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The script reads <code>.compose-aws.env</code> (written by the Ceph Terraform run) to
+inject your bucket location, endpoint URL, and temporary credentials.</p>
+</li>
+<li>
+<p>Executes <code>podman compose up -d</code>, which downloads or reuses the container
+images and networks them together, the following container services are
+started on the workstation:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>polaris</p>
+</li>
+<li>
+<p>spark</p>
+</li>
+<li>
+<p>jupiter</p>
+</li>
+<li>
+<p>trino</p>
+</li>
+<li>
+<p>superset</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Polls <code><a href="http://localhost:8182/healthcheck" class="bare">http://localhost:8182/healthcheck</a></code> until Polaris reports <strong>healthy</strong>.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verification"><a class="anchor" href="#_verification"></a>7.3. Verification</h3>
+<div class="paragraph">
+<p>We can run the <code>podman ps</code> command from the terminal to get a list of running containers:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># podman ps
+CONTAINER ID  IMAGE                                           COMMAND               CREATED      STATUS                PORTS                             NAMES
+739ff09d1ca5  quay.io/polaris-catalog/polaris:s3compatible    server polaris-se...  4 hours ago  Up 3 hours            0.0.0.0:8181-8182-&gt;8181-8182/tcp  polaris
+e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri...  4 hours ago  Up 4 hours            0.0.0.0:7077-&gt;7077/tcp            spark
+27b31efeffbe  docker.io/jupyter/pyspark-notebook:spark-3.5.0  start-notebook.py     4 hours ago  Up 4 hours (healthy)  0.0.0.0:8888-&gt;8888/tcp            jupiter
+911e40d103ee  docker.io/trinodb/trino:latest                  /usr/lib/trino/bi...  3 hours ago  Up 3 hours (healthy)  0.0.0.0:8080-&gt;8080/tcp            trino
+231de3a2e984  docker.io/apache/superset:latest                /bin/bash -c
+  s...        3 hours ago                                     Up 3 hours  0.0.0.0:8088-&gt;8088/tcp  superset</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_bootstrap_a_polaris_data_catalog_via_terraform"><a class="anchor" href="#_bootstrap_a_polaris_data_catalog_via_terraform"></a>8. Bootstrap a Polaris data catalog via Terraform</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction_2"><a class="anchor" href="#_introduction_2"></a>8.1. Introduction</h3>
+<div class="paragraph">
+<p>Our FreshGoods pipeline already has <strong>storage</strong> (a Ceph bucket <code>polarisdemo</code>) and <strong>compute</strong>
+(Spark, Trino, Superset) Containers runing.  What it still lacks is a
+<strong>brain/source of truth</strong> —a catalog that knows <strong>which tables exist, who may touch them, and how credentials are issued</strong>.</p>
+</div>
+<div class="paragraph">
+<p>That brain is <strong>Polaris</strong>.  In this section you’ll run the <code>polaris/</code>
+Terraform module to automate the governance rules for our Example Data
+Pipeline:</p>
+</div>
+<div class="paragraph">
+<p><strong>Nightly product‑movement CSV drops in → PII masked → morning dashboard out.</strong></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_what_the_module_builds"><a class="anchor" href="#_what_the_module_builds"></a>8.2. What the module builds</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Catalog <code>prod</code></strong> → points at the <code>s3://polarisdemo</code> warehouse bucket.</p>
+</li>
+<li>
+<p><strong>Namespace <code>prod_ns</code></strong> → think database / schema.</p>
+</li>
+<li>
+<p><strong>Iceberg RAW &amp; GOLD tables</strong>
+<code>products_raw</code> (ingested CSV Table) → <code>products_gold</code> (anonymized and curated parquet table).</p>
+</li>
+<li>
+<p><strong>Four personas (principals)</strong>
+<code>admin</code>, <code>engineer</code>, <code>compliance</code>, <code>analyst</code>.</p>
+</li>
+<li>
+<p><strong>Catalog roles &amp; grants</strong> that enforce least‑privilege:</p>
+<div class="literalblock">
+<div class="content">
+<pre>| Persona      | Allowed actions |
+|--------------|-----------------|
+| *Engineer*   | read / write **RAW** |
+| *Compliance* | read **RAW** + read / write **GOLD** |
+| *Analyst*    | read **GOLD** |
+| *Admin*      | everything (`catalog_admin`) |</pre>
+</div>
+</div>
+</li>
+<li>
+<p>Authentication tou the catalog happens with <strong>Short‑lived OAuth 2 tokens</strong> for each persona, exported as Terraform
+outputs so your different Query Engines: notebook, Trino CLI, and Superset pick them up automatically—no copy‑pasting secrets.</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_modify_variables_2"><a class="anchor" href="#_modify_variables_2"></a>8.3. Modify Variables</h3>
+<div class="paragraph">
+<p>The directory that contains the Polaris Terraform code is
+<code>/root/terraform/polaris</code> , the variables file is called <code>variables.tf</code>, the
+only parameter we need to change is the <code>s3_role_arn</code> so that it has our Role
+ARN with the account ID included, we can get our role ARN with the following
+CLI command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles | jq .Roles[0].Arn</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can then edit the terraform variabled file and use your labs role ARN:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># vi variables.tf
+variable "s3_role_arn" {
+  description = "The AWS IAM role ARN for accessing the S3 storage"
+  type        = string
+  default     = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client" &lt; --- MODIFY HERE
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The rest of the file variables are fine with the defaults, no need to change them.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_run_terraform_2"><a class="anchor" href="#_run_terraform_2"></a>8.4. Run Terraform</h3>
+<div class="paragraph">
+<p>Everything Polaris needs is now in place: Open a terminal, change to the module directory, and initialise Terraform:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cd ~/terraform/polaris
+# terraform init
+Terraform has been successfully initialized!</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Apply the configuration:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">terraform apply</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Terraform will ask for confirmation. Type <strong>yes</strong> and hit ⏎.</p>
+</div>
+<div class="paragraph">
+<p>On success you will see something like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">Apply complete! Resources: 24 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+admin_token = &lt;sensitive&gt;
+engineer_token = &lt;sensitive&gt;
+compliance_token = &lt;sensitive&gt;
+analyst_token = &lt;sensitive&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Behind the scenes Terraform has:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>created catalog <strong>prod</strong> and namespace <strong>prod_ns</strong></p>
+</li>
+<li>
+<p>created and registered two empty tables <strong>products_raw</strong> and
+<strong>products_gold</strong> with their schemas</p>
+</li>
+<li>
+<p>minted four principals(users) with role bindings and grants</p>
+</li>
+<li>
+<p>produced OAuth tokens for our Users that our Query Engines will consume</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>You are ready to ingest data in the next chapter.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verify_2"><a class="anchor" href="#_verify_2"></a>8.5. Verify</h3>
+<div class="sect3">
+<h4 id="_export_your_polaris_endpoint"><a class="anchor" href="#_export_your_polaris_endpoint"></a>8.5.1. Export your Polaris endpoint</h4>
+<div class="paragraph">
+<p>In your shell, point at the Polaris host and port you used in Terraform:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">export POLARIS_HOST=localhost
+export POLARIS_PORT=8181</code></pre>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_obtain_a_demo_user_token"><a class="anchor" href="#_obtain_a_demo_user_token"></a>8.5.2. Obtain a demo user token</h4>
+<div class="paragraph">
+<p>We’ll use the “engineer” token for this example (you can repeat for any persona):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">cd /root/terraform/polaris
+export DEMO_TOKEN=$(terraform output -raw engineer_token)
+echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you see a long base64‑style string, you’re good.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_list_all_tables_in_prodprod_ns"><a class="anchor" href="#_list_all_tables_in_prodprod_ns"></a>8.5.3. List all tables in prod/prod_ns</h4>
+<div class="paragraph">
+<p>Now call the REST API to list Iceberg tables in your <code>prod/prod_ns</code> namespace:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sS \
+  -H "Authorization: Bearer $DEMO_TOKEN" \
+  -H "Accept: application/json" \
+  "http://$POLARIS_HOST:$POLARIS_PORT/api/catalog/v1/prod/namespaces/prod_ns/tables" \
+| jq .</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_data_pipeline_execution_with_jupiter_notebook"><a class="anchor" href="#_data_pipeline_execution_with_jupiter_notebook"></a>9. Data pipeline execution with Jupiter Notebook</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this step, you’ll use a Jupyter Notebook to drive our Spark‑based data pipeline end‑to‑end.  Notebooks give us an interactive environment—combining documentation, code, and live output—so you can explore, validate, and debug each stage of the pipeline as you go.  Spark’s built‑in integration with Iceberg makes it trivial to read and write our RAW and GOLD tables with just a few lines of code.</p>
+</div>
+<div class="paragraph">
+<p>First, we’ll execute a helper script to get the jupyter URL that we will use.  Then you’ll open the <code>polaris_data_pipeline.ipynb</code> notebook and run through the ingestion, curation, and validation steps for our FreshGoods demo.</p>
+</div>
+<div class="paragraph">
+<p>Run the helper script to print your JupyterLab URL and access token:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash /root/scripts/show_jupyter_notebook_url.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Copy the printed URL (including the <code>?token=…</code> query) into your VNC Desktop browser’s address bar.
+  You should see the JupyterLab interface shortly.</p>
+</div>
+<div class="paragraph">
+<p>In the left sidebar, navigate to the <code>notebooks/</code> directory and click on <code>polaris_data_pipeline.ipynb</code> to open it.</p>
+</div>
+<div class="paragraph">
+<p>Follow the notebook cells in order.  Each cell contains explanatory markdown along with the Spark‑SQL or DataFrame APIs to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ingest the <code>products_raw_200.csv</code> file into your Iceberg RAW table</p>
+</li>
+<li>
+<p>Transform, hash PII, and overwrite the Parquet GOLD table</p>
+</li>
+<li>
+<p>Verify and preview pipeline output as the Analyst persona</p>
+</li>
+<li>
+<p>(Bonus) Validate that unauthorized personas cannot see or write data they shouldn’t</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>By the end of this notebook you will have run a full end‑to‑end Spark data pipeline—demonstrating raw ingest, fine‑grained RBAC, and PII protection—all within an interactive, repeatable environment.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_access_the_same_data_pipeline_tables_with_different_query_engines_trino"><a class="anchor" href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino"></a>10. Access the same Data Pipeline Tables with Different Query Engines (Trino)</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls. In this section, we’ll use the Trino CLI against our <code>prod</code> catalog and <code>prod_ns</code> schema—running as the <strong>Engineer</strong> persona—to:</p>
+</div>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>IBM Storage Ceph website: <a href="https://www.ibm.com/products/ceph">Visit here</a></p>
+<p>Find “Soda” duplicates in the RAW table</p>
 </li>
 <li>
-<p>IBM Storage Ceph documentation: <a href="http://docs.ceph.blue">View documentation</a></p>
+<p>Delete the extra rows</p>
 </li>
 <li>
-<p>IBM Storage Ceph video demos: <a href="http://easy.ceph.blue">Watch demos</a></p>
-</li>
-<li>
-<p>IBM Redbooks. IBM Storage Ceph Solutions Guide: <a href="https://www.redbooks.ibm.com/redpieces/pdfs/redp5715.pdf">Read Redbook</a></p>
+<p>Confirm the duplicates are gone</p>
 </li>
 </ol>
 </div>
-<div class="admonitionblock important">
+<div class="paragraph">
+<p>This demonstrates how you get consistent governance across compute engines.</p>
+</div>
+<div class="sect2">
+<h3 id="_1_connect_to_trino_cli"><a class="anchor" href="#_1_connect_to_trino_cli"></a>10.1. 1. Connect to Trino CLI</h3>
+<div class="paragraph">
+<p>Make sure you have run at least once the helper script `/root/scripts/show_jupiter_notebook_url.sh `. Then launch:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash /root/lakehouse/trino-cli.sh</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see a prompt like the following, using this prompt we will run our querys:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">trino:prod_ns&gt;</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_find_duplicate_soda_rows_in_the_raw_table"><a class="anchor" href="#_find_duplicate_soda_rows_in_the_raw_table"></a>10.2. Find duplicate “Soda” rows in the RAW table</h3>
+<div class="paragraph">
+<p>Now switch to the RAW table and look for any products named “Soda” that appear more than once:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">SELECT
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity,
+  COUNT(*) AS occurrences
+FROM products_raw
+WHERE product_name = 'Soda'
+GROUP BY
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity
+HAVING COUNT(*) &gt; 1;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If any duplicates exist, you’ll see one or more rows with <code>occurrences &gt; 1</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_delete_the_extra_duplicates"><a class="anchor" href="#_delete_the_extra_duplicates"></a>10.3. Delete the extra duplicates</h3>
+<div class="paragraph">
+<p>Keep the earliest timestamped row and delete the rest. Run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">DELETE FROM products_raw
+ WHERE (product_id, product_name, category, price, quantity, timestamp)
+   IN (
+     SELECT product_id,
+            product_name,
+            category,
+            price,
+            quantity,
+            timestamp
+       FROM (
+         SELECT
+           product_id,
+           product_name,
+           category,
+           price,
+           quantity,
+           timestamp,
+           ROW_NUMBER() OVER (
+             PARTITION BY product_id,
+                          product_name,
+                          category,
+                          price,
+                          quantity
+             ORDER BY timestamp
+           ) AS rn
+         FROM products_raw
+       ) AS dup
+      WHERE dup.rn &gt; 1
+   );</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Trino will report how many rows were deleted.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_verify_the_duplicates_are_gone"><a class="anchor" href="#_verify_the_duplicates_are_gone"></a>10.4. Verify the duplicates are gone</h3>
+<div class="paragraph">
+<p>Run the same “find duplicates” query again; it should now return zero rows:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">SELECT
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity,
+  COUNT(*) AS occurrences
+FROM products_raw
+WHERE product_name = 'Soda'
+GROUP BY
+  product_id,
+  product_name,
+  category,
+  price,
+  quantity
+HAVING COUNT(*) &gt; 1;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Expected output:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">(0 rows)</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>At this point you have:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Ingested raw CSV into Iceberg</p>
+</li>
+<li>
+<p>Curated &amp; protected PII in GOLD</p>
+</li>
+<li>
+<p>Used Trino to validate and even mutate the RAW data</p>
+</li>
+<li>
+<p>Done all of it under the same fine‑grained RBAC rules</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_apache_superset_to_build_visualizations_to_gain_insights_into_our_data"><a class="anchor" href="#_using_apache_superset_to_build_visualizations_to_gain_insights_into_our_data"></a>11. Using Apache Superset to build visualizations to gain insights into our data</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_lab_guide_building_top10_products_by_revenue_in_superset"><a class="anchor" href="#_lab_guide_building_top10_products_by_revenue_in_superset"></a>11.1. Lab Guide – Building “Top‑10 Products by Revenue” in Superset</h3>
+
+</div>
+<div class="sect2">
+<h3 id="_goal"><a class="anchor" href="#_goal"></a>11.2. Goal</h3>
+<div class="paragraph">
+<p>Create a bar chart that shows the ten products with the highest revenue and place it on the existing <strong>Sales Overview</strong> dashboard (or a new dashboard if you prefer).</p>
+</div>
+<div class="admonitionblock note">
 <table>
 <tr>
 <td class="icon">
-<i class="fa icon-important" title="Important"></i>
+<i class="fa icon-note" title="Note"></i>
 </td>
 <td class="content">
-<div class="paragraph">
-<p>This Enablement is not IBM official documentation for Ceph. For the official documentation, please see <a href="https://www.ibm.com/docs/en/storage-ceph/8" class="bare">https://www.ibm.com/docs/en/storage-ceph/8</a></p>
-</div>
+Replace screenshot placeholders such as <code>image::step‑02.png[]</code> with your own images after you capture them.
 </td>
 </tr>
 </table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_query_the_data_in_sqllab"><a class="anchor" href="#_query_the_data_in_sqllab"></a>11.3. Query the data in <strong>SQL Lab</strong></h3>
+<div class="paragraph">
+<p>Navigate to <span class="menuseq"><b class="menu">SQL</b>&#160;<i class="fa fa-angle-right caret"></i> <b class="menuitem">SQL Lab → SQL Editor</b></span>.
+In the <strong>Database</strong> drop‑down, choose <strong>Trino (Iceberg)</strong>.<br>
+Paste the query and click the <strong>Run</strong> ▶ button.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-sql hljs" data-lang="sql">SELECT
+    product_name,
+    SUM(total) AS revenue
+FROM prod_ns.products_gold
+GROUP BY product_name
+ORDER BY revenue DESC
+LIMIT 10;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify you get exactly 10 rows in the results panel.<br>
+image::superset1.png[Query results,600]</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_save_the_query_as_a_dataset"><a class="anchor" href="#_save_the_query_as_a_dataset"></a>11.4. Save the query as a dataset</h3>
+<div class="paragraph">
+<p>Click the <strong>Save</strong> button above the results → <strong>Save as dataset</strong>.
+image::superset2.png[Save dataset dialog]
+Fill in:
+  * <strong>Dataset name</strong> :: <code>top10_products_revenue</code>
+  * <strong>Database</strong> :: <strong>Trino (Iceberg)</strong>
+Press <b class="button">Save</b>. You will see a toast “Dataset saved”.
+image::superset3.png[Save Dataset]</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_explore_and_build_the_chart"><a class="anchor" href="#_explore_and_build_the_chart"></a>11.5. Explore and build the chart</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In the success toast, click <strong>Explore</strong> (or <span class="menuseq"><b class="menu">Actions</b>&#160;<i class="fa fa-angle-right caret"></i> <b class="menuitem">Explore</b></span> next to the new dataset).
+Superset opens the Chart Builder with the dataset already selected.</p>
+</li>
+<li>
+<p>In the <strong>Choose chart type</strong> gallery, click <strong>Bar Chart</strong>.
+image::Superset4.png[Pie Chart,600]</p>
+</li>
+</ol>
+</div>
+<div class="sect3">
+<h4 id="_configure_the_data_tab"><a class="anchor" href="#_configure_the_data_tab"></a>11.5.1. Configure the <strong>Data</strong> tab</h4>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 33.3333%;">
+<col style="width: 33.3334%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Control</th>
+<th class="tableblock halign-left valign-top">Value</th>
+<th class="tableblock halign-left valign-top">How</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X‑axis</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>product_name</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drag the column from the left column list.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Metrics</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>revenue</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drag the metric; remove <code>COUNT(*)</code> if present.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Sort by</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>revenue</code> ↓ (descending)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Drag <code>revenue</code> to the field; keep Desc.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Row limit</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>10</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Optional—keeps it to top‑10.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>Click <b class="button">Update chart</b>.<br>
+image::Superset5.png[Populated Data tab,600]</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_tidy_up_in_the_customize_tab_optional"><a class="anchor" href="#_tidy_up_in_the_customize_tab_optional"></a>11.5.2. Tidy up in the <strong>Customize</strong> tab (optional)</h4>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Y‑axis title</strong> :: <code>Revenue ($)</code></p>
+</li>
+<li>
+<p><strong>Y‑axis format</strong> :: <code>$.2f</code></p>
+</li>
+<li>
+<p>Pick a colour scheme you like.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Click <b class="button">Update chart</b> again to preview.
+image::superset6.png[Advanced,600]</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_save_the_chart_and_add_to_a_dashboard"><a class="anchor" href="#_save_the_chart_and_add_to_a_dashboard"></a>11.6. Save the chart and add to a dashboard</h3>
+<div class="paragraph">
+<p>Click <b class="button">Save</b>.
+Fill in:
+  * <strong>Chart name</strong> :: <code>Top‑10 Products by Revenue</code>
+  * <strong>Add to dashboard</strong> ::
+    <strong> If <strong>Sales Overview</strong> exists → choose it.
+    </strong> Otherwise → <strong>+ New dashboard</strong> → <code>Sales Overview</code>.
+Click <b class="button">Save &amp; Go to dashboard</b>.
+image::superset7.png[Advanced,600]</p>
+</div>
+<div class="paragraph">
+<p>Superset redirects you to the dashboard in <strong>Edit</strong> mode with your new bar chart already placed. Resize or drag to the desired position, then click <b class="button">Save</b> in the dashboard header.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/Superset8.png" alt="Dashboard with new chart" width="700">
+</div>
+</div>
+<div class="paragraph">
+<p>You’ve successfully added an interactive visual to your dashboard using nothing but SQL Lab and the chart builder—well done!</p>
+</div>
 </div>
 </div>
 </div>
