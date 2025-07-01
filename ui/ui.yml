@@ -1,1 +1,5 @@
 static_files: [ .nojekyll ]
+
+styles:
+  - css/site.css      # keep the upstream stylesheet
+  - css/custom.css    # add your overrides

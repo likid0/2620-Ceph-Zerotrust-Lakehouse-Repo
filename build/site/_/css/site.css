@@ -46,13 +46,6 @@
     url(../font/roboto-mono-latin-500.woff2) format("woff2"),
     url(../font/roboto-mono-latin-500.woff) format("woff");
 }
-button.nav-menu-toggle {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #fff;
-  cursor: pointer;
-}
 body,
 html {
   height: 100%;
@@ -192,31 +185,6 @@ table {
 html.is-clipped--nav {
   overflow-y: hidden;
 }
-
-.title-highlight-big {
-  text-align: center;
-  font-size: 3rem;
-  font-weight: bold;
-  color: #003366; /* Deep navy blue */
-  background-color: #f2f2f2; /* Light gray */
-  padding: 1rem;
-  border: 2px solid #003366;
-  border-radius: 0.5rem;
-  box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.title-highlight {
-  text-align: center;
-  font-size: 1.8rem; /* Smaller and more balanced size */
-  font-weight: 500; /* Slightly lighter for better readability */
-  color: #004080; /* Professional deep blue */
-  background-color: #e6f0ff; /* Subtle light blue background */
-  padding: 0.8rem; /* Slightly reduced padding */
-  border: 1px solid #004080; /* Thinner border for a cleaner look */
-  border-radius: 0.25rem; /* Softer rounded corners */
-  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1); /* Minimal shadow for subtle depth */
-}
-
 .nav-panel-menu {
   overflow-y: scroll;
   display: -webkit-box;

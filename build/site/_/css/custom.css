@@ -1,0 +1,18 @@
+/* ===== Remove the outermost left sidebar ===== */
+.nav-container           { display:none !important; }
+
+/* ===== Give the content all the space it needs ===== */
+@media screen and (min-width:1024px){
+  /* .body is the flex box that used to hold nav + main + right‑toc */
+  .body{
+    display:flex;
+    flex-direction:row;     /* default, but keep for clarity   */
+  }
+  main{ margin-left:0 !important; }           /* no gutter     */
+  .doc { max-width:none; }                    /* allow wider    */
+}
+
+/* (optional) move the page TOC from right to left
+   uncomment if you prefer Contents on the left side
+aside.toc.sidebar { order:-1; margin-left:0; margin-right:1.5rem; }
+*/
