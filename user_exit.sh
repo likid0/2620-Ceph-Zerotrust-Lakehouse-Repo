@@ -10,6 +10,7 @@ cp ./deploy_cluster.sh /root/scripts
 cp -pr ./Lakehouse/scripts/show_jupiter_notebook_url.sh /root/scripts
 cp -pr ./Lakehouse/ceph /root/terraform
 cp -pr ./Lakehouse/polaris /root/terraform
+cp -pr ./Lakehouse/scripts/.terraformrc /root/terraform/polaris/.terraformrc
 cp -pr ./Lakehouse /root/lakehouse
 cp -pr ./build /root/docs
 cp -pr ./build $USER_HOME/docs
