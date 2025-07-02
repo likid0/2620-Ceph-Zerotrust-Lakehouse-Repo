@@ -99,10 +99,11 @@ dnf -y install terraform
 dnf install podman.x86_64 podman-compose.noarch podman-docker.noarch podman-plugins.x86_64 -y
 scp -pr ceph-node1:/etc/ceph/ /etc/
 pip install awscli
-aws configure set aws_access_key_id demo --profile polaris-root
-aws configure set aws_secret_access_key demo --profile polaris-root
-aws configure set endpoint_url http://ceph-node2 --profile polaris-root
-aws configure set region default --profile polaris-root
+sleep 10
+/usr/local/bin/aws configure set aws_access_key_id demo --profile polaris-root
+/usr/local/bin/aws configure set aws_secret_access_key demo --profile polaris-root
+/usr/local/bin/aws configure set endpoint_url http://ceph-node2 --profile polaris-root
+/usr/local/bin/aws aws configure set region default --profile polaris-root
 echo "export TF_CLI_CONFIG_FILE=/root/terraform/polaris/.terraformrc" >> /root/.bashrc
 sleep 120
 ceph config-key get mgr/cephadm/registry_credentials | jq . > /root/scripts/registry.json

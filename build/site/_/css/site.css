@@ -46,6 +46,22 @@
     url(../font/roboto-mono-latin-500.woff2) format("woff2"),
     url(../font/roboto-mono-latin-500.woff) format("woff");
 }
+
+@font-face{
+  font-family: Roboto;
+  font-style:  normal;
+  font-weight: 700;                               /* this is the key line  */
+  src: url(../font/Roboto-Bold.woff2)      format("woff2"),
+       url(../font/Roboto-Bold.ttf)   format("truetype");
+}
+
+img.padded { margin-right: 1rem; }
+
+b,
+strong {
+  font-weight: 700 !important;
+}
+
 body,
 html {
   height: 100%;

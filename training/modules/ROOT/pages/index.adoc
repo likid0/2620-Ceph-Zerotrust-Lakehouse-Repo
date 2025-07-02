@@ -13,9 +13,31 @@
 :toclevels: 4
 
 [.title-highlight]
-Welcome to the IBM Storage Ceph ZeroTrust LakeHouse Lab!
+= Welcome to the IBM Storage Ceph ZeroTrust LakeHouse Lab!
 
-== ZeroTrus Data LakeHouse
+== Lab Introduction
+Are you ready to see how **Zero‑Trust security** and **open‑format analytics**
+come together with IBM Storage Ceph as the common data platform for the solution?
+
+image::ceph_Datalake.png[float="right",role=padded,width=190]
+
+In the next ~90 minutes you’ll stand up a miniature lakehouse, secure it
+with Polaris, push data through a Spark pipeline, query it with Trino,
+and build a Superset dashboard.
+
+*Are you Ready?*
+
+If you want an introduction on the subject to gain context move to chapter 3
+"ZeroTrus Data LakeHouse". If you prefer to get your hands dirty straight away
+Jump to Chapter 4 and let’s build a Zero‑Trust Data Lakehouse!
+
+[IMPORTANT]
+====
+This Enablement is not IBM official documentation for Ceph. For the official documentation, please see https://www.ibm.com/docs/en/storage-ceph/8
+====
+
+
+== ZeroTrust Data LakeHouse
 image::CephS3Native.png[align=center, role=diagram]
 == Why Governance is a complex topic to solve in Lakehouse deployments?
 [.lead]
@@ -193,7 +215,7 @@ image::workflow_lab.png[align=center, role=diagram]
 
 === Estimated time
 
-*90 minutes*
+Around *90 minutes*.
 
 === Provided for you
 
@@ -207,7 +229,7 @@ to the IBM Storage Ceph Tech-Zone Collection and Order the Lab https://techzone.
 
 We must open a CLI terminal in our workstation machine and sudo to run the
 lab commands as the `ROOT` user. The workstation has the required ceph client
-RPMs and the CephX admin keys for our deployment so that
+RPMs and the CephX admin keys for our Ceph deployment so that
 we can run most of the necessary commands for this lab from the workstation.
 
 ----
@@ -238,22 +260,70 @@ From the previous command we can verify that we have a healthy running Ceph Clus
 
 == Creating the required S3 IAM Account and Root Account User
 
-=== Creating the IAM Account
+Before Polaris (or any other service) can create time‑bound STS tokens,
+the Ceph RGW must know **which tenant it belongs to** and **who the root
+identity is** for that tenant.
+In Ceph terminology:
 
+* an IAM **account** ≈ a logical tenant
+* an account root **user** ≈ The root account user is the admin of the tenant
+
+We’ll first create the *analytics* tenant, then a *root* user inside it,
+and finally an initial S3 bucket that Polaris will use in later steps.
+
+=== Create the *analytics* tenant
+
+The command below runs on our Desktop hosts:
+
+[source,shell]
 ----
 radosgw-admin account create --account-name=analytics
 ----
 
-=== Creating the Root User for the IAM Account
+*What it does*
 
+* Writes a new tenant record named `analytics` into the RGW metadata store
+* Returns an **Account ID** (keep it; we need it for the next step)
+
+=== Create the root user for that tenant
+
+Replace `RGW59183818904979875` with the Account ID you got above:
+
+[source,shell]
 ----
-radosgw-admin user create --uid=analytics_root --display-name=root_analytics_user --account-id=RGW59183818904979875 --account-root  --access-key=demo --secret-key=demo
+radosgw-admin user create \
+  --uid=analytics_root \
+  --display-name=root_analytics_user \
+  --account-id=RGW59183818904979875 \
+  --account-root \
+  --access-key=demo \
+  --secret-key=demo
 ----
 
-=== Creating the `polarisdemo` bucket
+*What it does*
+
+* Adds a new root user `analytics_root` **inside** the *analytics* tenant
+* Marks it as the **tenant root**, meaning it can create more users and buckets
+* Hard‑codes an S3 access‑key / secret‑key pair (`demo / demo`) for lab
+  convenience (never do this in production!)
+
+You should see JSON output showing the UID, Account‑ID, and the two keys.
+
+=== Create the **polarisdemo** bucket
+
+Now that we have credentials, we can use the standard AWS CLI
+
+[source,shell]
 ----
 aws --profile polaris-root s3 mb s3://polarisdemo
 ----
+
+*What it does*
+
+* Places the bucket in the *analytics* tenant because the access key we used
+  belongs to the tenant root user
+* Provides a clean, empty location where Polaris will write Iceberg tables
+  later in the workshop
 
 
 == Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources
@@ -315,10 +385,10 @@ from the CLI you can get your Account ID with:
 ]
 ```
 
-Then edit the /root/terraform/ceph/terraform.tfvars and modify the Account ID:
+Then edit the `/root/terraform/ceph/terraform.tfvars` and modify the `account_arn`:
 
 ----
-# cat /root/terraform/ceph/terraform.tfvars
+# vi /root/terraform/ceph/terraform.tfvars
 # Ceph object-gateway (RGW) HTTPS endpoint, used for S3 **and** STS/IAM calls
 ceph_endpoint       = "http://ceph-node2"
 
@@ -590,11 +660,11 @@ Pipeline:
 
 === Modify Variables
 
-The directory that contains the Polaris Terraform code is
+In our Desktop the directory that contains the Polaris Terraform code is
 `/root/terraform/polaris` , the variables file is called `variables.tf`, the
 only parameter we need to change is the `s3_role_arn` so that it has our Role
 ARN with the account ID included, we can get our role ARN with the following
-CLI command:
+RGW admin CLI command:
 
 ----
 # aws --profile polaris-root iam list-roles | jq .Roles[0].Arn
@@ -706,7 +776,11 @@ bash /root/scripts/show_jupyter_notebook_url.sh
 Copy the printed URL (including the `?token=…` query) into your VNC Desktop browser’s address bar.
   You should see the JupyterLab interface shortly.
 
+image::jup1.png[jupiter1,1800]
+
 In the left sidebar, navigate to the `notebooks/` directory and click on `polaris_data_pipeline.ipynb` to open it.
+
+image::jup2.png[jupiter2,1800]
 
 Follow the notebook cells in order.  Each cell contains explanatory markdown along with the Spark‑SQL or DataFrame APIs to:
 
@@ -714,6 +788,10 @@ Follow the notebook cells in order.  Each cell contains explanatory markdown alo
   * Transform, hash PII, and overwrite the Parquet GOLD table
   * Verify and preview pipeline output as the Analyst persona
   * (Bonus) Validate that unauthorized personas cannot see or write data they shouldn’t
+
+You can run cells one by one using the > button, and  waiting to get the output before running the next cell:
+
+image::jup3.png[jupiter3,1800]
 
 By the end of this notebook you will have run a full end‑to‑end Spark data pipeline—demonstrating raw ingest, fine‑grained RBAC, and PII protection—all within an interactive, repeatable environment.
 
@@ -847,12 +925,10 @@ At this point you have:
 This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.
 
 == Using Apache Superset to build visualizations to gain insights into our data
-=== Lab Guide – Building “Top‑10 Products by Revenue” in Superset
 
 === Goal
-Create a bar chart that shows the ten products with the highest revenue and place it on the existing *Sales Overview* dashboard (or a new dashboard if you prefer).
-
-NOTE: Replace screenshot placeholders such as `image::step‑02.png[]` with your own images after you capture them.
+Create a bar chart that shows the ten products with the highest revenue and
+place it on the existing *Sales Overview* dashboard.
 
 ===  Query the data in **SQL Lab**
 
@@ -871,26 +947,31 @@ ORDER BY revenue DESC
 LIMIT 10;
 ----
 
-Verify you get exactly 10 rows in the results panel. +
-image::superset1.png[Query results,600]
+Verify you get exactly 10 rows in the results panel.
+
+image::superset1.png[Query results,1800]
 
 ===  Save the query as a dataset
 
 Click the *Save* button above the results → **Save as dataset**.
-image::superset2.png[Save dataset dialog]
+
+image::superset2.png[Save dataset dialog,1800]
+
 Fill in:
-  * *Dataset name* :: `top10_products_revenue`
-  * *Database* :: **Trino (Iceberg)**
-Press btn:[Save]. You will see a toast “Dataset saved”.
-image::superset3.png[Save Dataset]
+
+  * *Dataset name* :: `top_revenue_products`
+
+Press btn:[Save and Explore]. You will see a toast “Dataset saved”.
+
+image::Superset3.png[Save Dataset,1800]
 
 ===  Explore and build the chart
 
-. In the success toast, click **Explore** (or menu:Actions[Explore] next to the new dataset).
-  Superset opens the Chart Builder with the dataset already selected.
-. In the *Choose chart type* gallery, click **Bar Chart**.
-image::Superset4.png[Pie Chart,600]
+Superset opens the Chart Builder with the dataset already selected.
 
+In the *Choose chart type* gallery, click **Bar Chart**.
+
+image::Superset4.png[Pie Chart,1800]
 
 ==== Configure the *Data* tab
 
@@ -903,17 +984,18 @@ image::Superset4.png[Pie Chart,600]
 |*Row limit* |`10` |Optional—keeps it to top‑10.
 |===
 
-Click btn:[Update chart]. +
-image::Superset5.png[Populated Data tab,600]
+Click btn:[Update chart]
+image::Superset5.png[Populated Data tab,1800]
 
 ==== Tidy up in the *Customize* tab (optional)
 
-* *Y‑axis title* :: `Revenue ($)`
-* *Y‑axis format* :: `$.2f`
+* *Y‑axis title* select: `Revenue ($)`
+* *Y‑axis format* select:  `$.2f`
 * Pick a colour scheme you like.
 
 Click btn:[Update chart] again to preview.
-image::superset6.png[Advanced,600]
+
+image::superset6.png[Advanced,1800]
 
 === Save the chart and add to a dashboard
 
@@ -924,11 +1006,12 @@ Fill in:
     ** If *Sales Overview* exists → choose it.
     ** Otherwise → **+ New dashboard** → `Sales Overview`.
 Click btn:[Save & Go to dashboard].
-image::superset7.png[Advanced,600]
+
+image::superset7.png[Advanced,1800]
 
 Superset redirects you to the dashboard in *Edit* mode with your new bar chart already placed. Resize or drag to the desired position, then click btn:[Save] in the dashboard header.
 
-image::Superset8.png[Dashboard with new chart,700]
+image::Superset8.png[Dashboard with new chart,1800]
 
 You’ve successfully added an interactive visual to your dashboard using nothing but SQL Lab and the chart builder—well done!
 
