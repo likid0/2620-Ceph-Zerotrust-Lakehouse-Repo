@@ -971,6 +971,12 @@ image::add4.png[intro,900]
 Create a bar chart that shows the ten products with the highest revenue and
 place it on the existing *Sales Overview* dashboard.
 
+[NOTE]
+====
+Log in to Superset with **user =`admin` / password =`admin`**.
+The container resets these credentials every time it (re)starts.
+====
+
 ===  Query the data in **SQL Lab**
 
 Navigate to menu:SQL[SQL Lab → SQL Editor].
