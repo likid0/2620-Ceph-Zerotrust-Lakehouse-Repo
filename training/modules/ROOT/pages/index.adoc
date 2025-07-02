@@ -35,11 +35,11 @@ Over an estimated 90 minutes you will:
 
 Two possible learning paths are available:
 
-Conceptual first – Chapters 2 & 3.
+*Conceptual first* – Chapters 2 & 3.
 Review the governance challenges inherent to lakehouse designs and see how Ceph, Iceberg, and Polaris combine to address them.
 
-Hands‑on first – Chapter 4 onward.
-Proceed directly to the build instructions and assemble the environment step by step.
+*Hands‑on Lab* – Chapter 4 onward.
+Proceed directly to the hands-on lab instructions and assemble the environment step by step.
 
 By the conclusion of the lab you will have a working reference implementation and a clear understanding of how Zero‑Trust principles can be applied to large‑scale analytics on IBM Storage Ceph.
 
