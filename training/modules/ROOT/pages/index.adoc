@@ -11,31 +11,42 @@
 :sectnumlevels: 6
 :toc: left
 :toclevels: 4
+:sectanchors:
 
 [.title-highlight]
 = Welcome to the IBM Storage Ceph ZeroTrust LakeHouse Lab!
 
 == Lab Introduction
-Are you ready to see how **Zero‑Trust security** and **open‑format analytics**
-come together with IBM Storage Ceph as the common data platform for the solution?
+In this guided exercise you will construct a Zero‑Trust data‑lakehouse prototype on IBM Storage Ceph Object Storage and verify that it remains secure, auditable, and performant throughout a complete analytics lifecycle. The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.
 
 image::ceph_Datalake.png[float="right",role=padded,width=190]
 
-In the next ~90 minutes you’ll stand up a miniature lakehouse, secure it
-with Polaris, push data through a Spark pipeline, query it with Trino,
-and build a Superset dashboard.
+Over an estimated 90 minutes you will:
 
-*Are you Ready?*
+. Establish the Ceph‑backed landing zone and create a dedicated S3 tenant to isolate analytic workloads.
 
-If you want an introduction on the subject to gain context move to chapter 3
-"ZeroTrus Data LakeHouse". If you prefer to get your hands dirty straight away
-Jump to Chapter 4 and let’s build a Zero‑Trust Data Lakehouse!
+. Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by Ceph RGW—no proxy, no performance penalty.
+
+. Deploy the analytics stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.
+
+. Execute an end‑to‑end workflow: ingest raw objects, transform them into Iceberg tables, validate data quality, and present results in a dashboard.
+
+. Inspect and verify the security posture at each stage to confirm that Zero‑Trust requirements are met.
+
+Two possible learning paths are available:
+
+Conceptual first – Chapters 2 & 3.
+Review the governance challenges inherent to lakehouse designs and see how Ceph, Iceberg, and Polaris combine to address them.
+
+Hands‑on first – Chapter 4 onward.
+Proceed directly to the build instructions and assemble the environment step by step.
+
+By the conclusion of the lab you will have a working reference implementation and a clear understanding of how Zero‑Trust principles can be applied to large‑scale analytics on IBM Storage Ceph.
 
 [IMPORTANT]
 ====
 This Enablement is not IBM official documentation for Ceph. For the official documentation, please see https://www.ibm.com/docs/en/storage-ceph/8
 ====
-
 
 == ZeroTrust Data LakeHouse
 image::CephS3Native.png[align=center, role=diagram]
@@ -127,9 +138,7 @@ only the tables that executor may touch.
 * **Full speed** – the executor streams Parquet directly from RGW, no proxys needed.
 
 
-== Lab Introduction
-
-
+== Lab Workflow Overview
 
 [abstract]
 In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on *Ceph Object Gateway (RGW)* and is governed by the *Polaris* data‑catalog.  
@@ -335,7 +344,7 @@ aws --profile polaris-root s3 mb s3://polarisdemo
 Before we launch Spark, Trino, or Polaris we need a secure *landing zone* inside Ceph’s Object Gateway (RGW).
 Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in **Terraform**—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.
 
-image::add2.png[float="right",role=padded,width=300]
+image::add2.png[center,600]
 
 === Why automate this step?
 
@@ -344,7 +353,7 @@ image::add2.png[float="right",role=padded,width=300]
 * **Auditability** – All security-sensitive artifacts (bucket names, IAM policies, ARNs) can live in Git—no tribal knowledge locked in a UI click-path.
 
 === What the code does
-[%header,cols="25,~"]
+[%header,cols="30,~"]
 |===
 | Block | Purpose
 
@@ -581,6 +590,8 @@ The Role Policy that defines what S3 resources that Polaris can Access once it a
 
 == Deploy the Lab Analytical Container Stack
 
+image::add5.png[float="right",role=padded,width=400]
+
 === Introduction
 
 With storage and IAM wiring complete, bring the *analytic compute tier* online.
@@ -610,7 +621,7 @@ What happens under the hood:
 
   ** polaris
   ** spark
-  ** jupiter
+  ** jupyter
   ** trino
   ** superset
 
@@ -625,7 +636,7 @@ We can run the `podman ps` command from the terminal to get a list of running co
 CONTAINER ID  IMAGE                                           COMMAND               CREATED      STATUS                PORTS                             NAMES
 739ff09d1ca5  quay.io/polaris-catalog/polaris:s3compatible    server polaris-se...  4 hours ago  Up 3 hours            0.0.0.0:8181-8182->8181-8182/tcp  polaris
 e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri...  4 hours ago  Up 4 hours            0.0.0.0:7077->7077/tcp            spark
-27b31efeffbe  docker.io/jupyter/pyspark-notebook:spark-3.5.0  start-notebook.py     4 hours ago  Up 4 hours (healthy)  0.0.0.0:8888->8888/tcp            jupiter
+27b31efeffbe  docker.io/jupyter/pyspark-notebook:spark-3.5.0  start-notebook.py     4 hours ago  Up 4 hours (healthy)  0.0.0.0:8888->8888/tcp            jupyter
 911e40d103ee  docker.io/trinodb/trino:latest                  /usr/lib/trino/bi...  3 hours ago  Up 3 hours (healthy)  0.0.0.0:8080->8080/tcp            trino
 231de3a2e984  docker.io/apache/superset:latest                /bin/bash -c
   s...        3 hours ago                                     Up 3 hours  0.0.0.0:8088->8088/tcp  superset
@@ -772,7 +783,7 @@ curl -sS \
 | jq .
 ----
 
-== Data pipeline execution with Jupiter Notebook 
+== Data pipeline execution with Jupyter Notebook 
 
 In this step, you’ll use a Jupyter Notebook to drive our Spark‑based data pipeline end‑to‑end.  Notebooks give us an interactive environment—combining documentation, code, and live output—so you can explore, validate, and debug each stage of the pipeline as you go.  Spark’s built‑in integration with Iceberg makes it trivial to read and write our RAW and GOLD tables with just a few lines of code.
 
@@ -810,6 +821,7 @@ By the end of this notebook you will have run a full end‑to‑end Spark data p
 == Access the same Data Pipeline Tables with Different Query Engines (Trino)
 
 Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** Icerberg Compatible SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. 
+image::add3.png[float="right",role=padded,width=300]
 
 In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_ns` schema—running as the **Engineer** persona—to:
 
@@ -819,7 +831,6 @@ In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_
 
 This demonstrates how you get consistent governance to the centralized datasets stored in Ceph across compute engines.
 
-image::add3.png[float="right",role=padded,width=300]
 
 === Connect to Trino CLI
 
@@ -832,7 +843,7 @@ bash /root/lakehouse/trino-cli.sh
 ----
 
 You should see a prompt like the following, using this prompt we will run our
-Trino SQL querys:
+Trino SQL queries:
 
 ----
 trino:prod_ns>
@@ -866,6 +877,16 @@ HAVING COUNT(*) > 1;
 If any duplicates exist, you’ll see one or more rows with `occurrences > 1`.
 
 === Delete the extra duplicates
+
+[NOTE]
+====
+`DELETE FROM` is available only when the Iceberg table is created in
+*format‑version 2* (Iceberg v2).
+The `products_raw` table you generated earlier was written by Spark with
+`iceberg.format-version = 2`, which is why the command works.
+If you attempt the same statement on a v1 table Trino will return
+`NOT_SUPPORTED: Cannot delete from non‑transactional table`.
+====
 
 Keep the earliest timestamped row and delete the rest. Run:
 
@@ -945,11 +966,10 @@ This illustrates the power of a unified, governed Iceberg catalog for multi‑en
 
 == Using Apache Superset to build visualizations to gain insights into our data
 
+image::add4.png[intro,900]
 === Goal
 Create a bar chart that shows the ten products with the highest revenue and
 place it on the existing *Sales Overview* dashboard.
-
-image::add4.png[float="right",role=padded,width=300]
 
 ===  Query the data in **SQL Lab**
 

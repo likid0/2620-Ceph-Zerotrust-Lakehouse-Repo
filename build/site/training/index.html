@@ -95,7 +95,7 @@
 <li><a href="#_polaris_credential_vending_table_level_rbac_without_sidecars">3.3. Polaris Credential Vending — <strong>Table-Level</strong> RBAC without Sidecars</a></li>
 </ul>
 </li>
-<li><a href="#_lab_introduction_2">4. Lab Introduction</a>
+<li><a href="#_lab_workflow_overview">4. Lab Workflow Overview</a>
 <ul class="sectlevel2">
 <li><a href="#_context_for_our_real_life_use_case_retailanalytics">4.1. Context for our Real Life Use Case: retail‑analytics</a></li>
 <li><a href="#_lab_workflow">4.2. Lab Workflow</a></li>
@@ -147,7 +147,7 @@
 </li>
 </ul>
 </li>
-<li><a href="#_data_pipeline_execution_with_jupiter_notebook">10. Data pipeline execution with Jupiter Notebook</a></li>
+<li><a href="#_data_pipeline_execution_with_jupyter_notebook">10. Data pipeline execution with Jupyter Notebook</a></li>
 <li><a href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino">11. Access the same Data Pipeline Tables with Different Query Engines (Trino)</a>
 <ul class="sectlevel2">
 <li><a href="#_connect_to_trino_cli">11.1. Connect to Trino CLI</a></li>
@@ -176,8 +176,7 @@
 <h2 id="_lab_introduction"><a class="anchor" href="#_lab_introduction"></a>1. Lab Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Are you ready to see how <strong>Zero‑Trust security</strong> and <strong>open‑format analytics</strong>
-come together with IBM Storage Ceph as the common data platform for the solution?</p>
+<p>In this guided exercise you will construct a Zero‑Trust data‑lakehouse prototype on IBM Storage Ceph Object Storage and verify that it remains secure, auditable, and performant throughout a complete analytics lifecycle. The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.</p>
 </div>
 <div class="imageblock right padded">
 <div class="content">
@@ -185,17 +184,40 @@ come together with IBM Storage Ceph as the common data platform for the soluti
 </div>
 </div>
 <div class="paragraph">
-<p>In the next ~90 minutes you’ll stand up a miniature lakehouse, secure it
-with Polaris, push data through a Spark pipeline, query it with Trino,
-and build a Superset dashboard.</p>
+<p>Over an estimated 90 minutes you will:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Establish the Ceph‑backed landing zone and create a dedicated S3 tenant to isolate analytic workloads.</p>
+</li>
+<li>
+<p>Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by Ceph RGW—no proxy, no performance penalty.</p>
+</li>
+<li>
+<p>Deploy the analytics stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.</p>
+</li>
+<li>
+<p>Execute an end‑to‑end workflow: ingest raw objects, transform them into Iceberg tables, validate data quality, and present results in a dashboard.</p>
+</li>
+<li>
+<p>Inspect and verify the security posture at each stage to confirm that Zero‑Trust requirements are met.</p>
+</li>
+</ol>
 </div>
 <div class="paragraph">
-<p><strong>Are you Ready?</strong></p>
+<p>Two possible learning paths are available:</p>
 </div>
 <div class="paragraph">
-<p>If you want an introduction on the subject to gain context move to chapter 3
-"ZeroTrus Data LakeHouse". If you prefer to get your hands dirty straight away
-Jump to Chapter 4 and let’s build a Zero‑Trust Data Lakehouse!</p>
+<p>Conceptual first – Chapters 2 &amp; 3.
+Review the governance challenges inherent to lakehouse designs and see how Ceph, Iceberg, and Polaris combine to address them.</p>
+</div>
+<div class="paragraph">
+<p>Hands‑on first – Chapter 4 onward.
+Proceed directly to the build instructions and assemble the environment step by step.</p>
+</div>
+<div class="paragraph">
+<p>By the conclusion of the lab you will have a working reference implementation and a clear understanding of how Zero‑Trust principles can be applied to large‑scale analytics on IBM Storage Ceph.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -419,7 +441,7 @@ only the tables that executor may touch.</p></td>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_lab_introduction_2"><a class="anchor" href="#_lab_introduction_2"></a>4. Lab Introduction</h2>
+<h2 id="_lab_workflow_overview"><a class="anchor" href="#_lab_workflow_overview"></a>4. Lab Workflow Overview</h2>
 <div class="sectionbody">
 <div class="quoteblock abstract">
 <blockquote>
@@ -429,7 +451,7 @@ You will automate the infrastructure with Terraform, ingest data with Spark, que
 </div>
 <div class="imageblock right padded">
 <div class="content">
-<img src="_images/add1.png" alt="add1" width="190">
+<img src="_images/add1.png" alt="add1" width="300">
 </div>
 </div>
 <div class="sect2">
@@ -437,7 +459,8 @@ You will automate the infrastructure with Terraform, ingest data with Spark, que
 <div class="paragraph">
 <p>Imagine you are the data team for <strong>FreshGoods</strong>, a mid‑size grocery chain that
 ships online orders from 40 local stores.  Every night each store uploads a
-CSV “drop” to Ceph RGW containing the day’s <strong>product movement</strong> log:</p>
+CSV “drop” to Ceph RGW containing the day’s <strong>product sales</strong> log, the dataset
+contains the following columns:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -462,11 +485,11 @@ CSV “drop” to Ceph RGW containing the day’s <strong>product movement</str
 </ul>
 </div>
 <div class="paragraph">
-<p><strong>Your mission in this lab:</strong> turn those raw files into insight the business can
-act on 9 a.m.**—without ever letting unauthorised eyes near the PII.</p>
+<p><strong>Your mission in this lab:</strong> turn those ingested CSV raw files into insight the business can
+act on during the next morning —without ever letting unauthorised eyes near the PII.</p>
 </div>
 <div class="paragraph">
-<p>We will walk you through that journey in the lab, compressed into 90 minutes:</p>
+<p>We will walk you through that journey in this lab, compressed into 90 minutes:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -496,7 +519,7 @@ morning.  The hashed emails never leave the lake; the analyst never sees PII.</p
 </ol>
 </div>
 <div class="paragraph">
-<p>The glue that enforces who can touch what is <strong>Polaris</strong> CatalogI.</p>
+<p>The glue that enforces who can access what is ithe <strong>Polaris</strong> Iceberg Restfull Catalog.</p>
 </div>
 <div class="paragraph">
 <p>By the end of the lab you’ll have a governed catalog exactly like a real
@@ -761,6 +784,11 @@ later in the workshop</p>
 <p>Before we launch Spark, Trino, or Polaris we need a secure <strong>landing zone</strong> inside Ceph’s Object Gateway (RGW).
 Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in <strong>Terraform</strong>—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.</p>
 </div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/add2.png" alt="center" width="600">
+</div>
+</div>
 <div class="sect2">
 <h3 id="_why_automate_this_step"><a class="anchor" href="#_why_automate_this_step"></a>7.1. Why automate this step?</h3>
 <div class="ulist">
@@ -781,7 +809,7 @@ Rather than clicking through the Ceph Dashboard by hand, we’ll declare every b
 <h3 id="_what_the_code_does"><a class="anchor" href="#_what_the_code_does"></a>7.2. What the code does</h3>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
-<col style="width: 25%;">
+<col style="width: 30%;">
 <col>
 </colgroup>
 <thead>
@@ -1097,6 +1125,11 @@ Resources:</p>
 <div class="sect1">
 <h2 id="_deploy_the_lab_analytical_container_stack"><a class="anchor" href="#_deploy_the_lab_analytical_container_stack"></a>8. Deploy the Lab Analytical Container Stack</h2>
 <div class="sectionbody">
+<div class="imageblock right padded">
+<div class="content">
+<img src="_images/add5.png" alt="add5" width="400">
+</div>
+</div>
 <div class="sect2">
 <h3 id="_introduction"><a class="anchor" href="#_introduction"></a>8.1. Introduction</h3>
 <div class="paragraph">
@@ -1153,7 +1186,7 @@ started on the workstation:</p>
 <p>spark</p>
 </li>
 <li>
-<p>jupiter</p>
+<p>jupyter</p>
 </li>
 <li>
 <p>trino</p>
@@ -1181,7 +1214,7 @@ started on the workstation:</p>
 CONTAINER ID  IMAGE                                           COMMAND               CREATED      STATUS                PORTS                             NAMES
 739ff09d1ca5  quay.io/polaris-catalog/polaris:s3compatible    server polaris-se...  4 hours ago  Up 3 hours            0.0.0.0:8181-8182-&gt;8181-8182/tcp  polaris
 e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri...  4 hours ago  Up 4 hours            0.0.0.0:7077-&gt;7077/tcp            spark
-27b31efeffbe  docker.io/jupyter/pyspark-notebook:spark-3.5.0  start-notebook.py     4 hours ago  Up 4 hours (healthy)  0.0.0.0:8888-&gt;8888/tcp            jupiter
+27b31efeffbe  docker.io/jupyter/pyspark-notebook:spark-3.5.0  start-notebook.py     4 hours ago  Up 4 hours (healthy)  0.0.0.0:8888-&gt;8888/tcp            jupyter
 911e40d103ee  docker.io/trinodb/trino:latest                  /usr/lib/trino/bi...  3 hours ago  Up 3 hours (healthy)  0.0.0.0:8080-&gt;8080/tcp            trino
 231de3a2e984  docker.io/apache/superset:latest                /bin/bash -c
   s...        3 hours ago                                     Up 3 hours  0.0.0.0:8088-&gt;8088/tcp  superset</code></pre>
@@ -1209,6 +1242,11 @@ Pipeline:</p>
 <p><strong>Nightly batch of shops product‑movement drops in CSV format → All PII is
 masked → in the morning data dashboard visualizations are available for the
 stakeholders to take action.</strong></p>
+</div>
+<div class="imageblock right padded">
+<div class="content">
+<img src="_images/add2.png" alt="add2" width="300">
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -1391,7 +1429,7 @@ echo $DEMO_TOKEN</code></pre>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_data_pipeline_execution_with_jupiter_notebook"><a class="anchor" href="#_data_pipeline_execution_with_jupiter_notebook"></a>10. Data pipeline execution with Jupiter Notebook</h2>
+<h2 id="_data_pipeline_execution_with_jupyter_notebook"><a class="anchor" href="#_data_pipeline_execution_with_jupyter_notebook"></a>10. Data pipeline execution with Jupyter Notebook</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>In this step, you’ll use a Jupyter Notebook to drive our Spark‑based data pipeline end‑to‑end.  Notebooks give us an interactive environment—combining documentation, code, and live output—so you can explore, validate, and debug each stage of the pipeline as you go.  Spark’s built‑in integration with Iceberg makes it trivial to read and write our RAW and GOLD tables with just a few lines of code.</p>
@@ -1460,7 +1498,8 @@ echo $DEMO_TOKEN</code></pre>
 <h2 id="_access_the_same_data_pipeline_tables_with_different_query_engines_trino"><a class="anchor" href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino"></a>11. Access the same Data Pipeline Tables with Different Query Engines (Trino)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> Icerberg Compatible SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls.</p>
+<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> Icerberg Compatible SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls.
+image::add3.png[float="right",role=padded,width=300]</p>
 </div>
 <div class="paragraph">
 <p>In this section, we’ll use the Trino CLI against our <code>prod</code> catalog and <code>prod_ns</code> schema—running as the <strong>Engineer</strong> persona—to:</p>
@@ -1494,7 +1533,7 @@ echo $DEMO_TOKEN</code></pre>
 </div>
 <div class="paragraph">
 <p>You should see a prompt like the following, using this prompt we will run our
-Trino SQL querys:</p>
+Trino SQL queries:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1534,6 +1573,25 @@ HAVING COUNT(*) &gt; 1;</code></pre>
 </div>
 <div class="sect2">
 <h3 id="_delete_the_extra_duplicates"><a class="anchor" href="#_delete_the_extra_duplicates"></a>11.3. Delete the extra duplicates</h3>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><code>DELETE FROM</code> is available only when the Iceberg table is created in
+<strong>format‑version 2</strong> (Iceberg v2).
+The <code>products_raw</code> table you generated earlier was written by Spark with
+<code>iceberg.format-version = 2</code>, which is why the command works.
+If you attempt the same statement on a v1 table Trino will return
+<code>NOT_SUPPORTED: Cannot delete from non‑transactional table</code>.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 <div class="paragraph">
 <p>Keep the earliest timestamped row and delete the rest. Run:</p>
 </div>
@@ -1635,6 +1693,11 @@ HAVING COUNT(*) &gt; 1;</code></pre>
 <div class="sect1">
 <h2 id="_using_apache_superset_to_build_visualizations_to_gain_insights_into_our_data"><a class="anchor" href="#_using_apache_superset_to_build_visualizations_to_gain_insights_into_our_data"></a>12. Using Apache Superset to build visualizations to gain insights into our data</h2>
 <div class="sectionbody">
+<div class="imageblock">
+<div class="content">
+<img src="_images/add4.png" alt="intro" width="900">
+</div>
+</div>
 <div class="sect2">
 <h3 id="_goal"><a class="anchor" href="#_goal"></a>12.1. Goal</h3>
 <div class="paragraph">
