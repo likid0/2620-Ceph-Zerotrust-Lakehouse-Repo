@@ -150,7 +150,7 @@
 <li><a href="#_data_pipeline_execution_with_jupiter_notebook">10. Data pipeline execution with Jupiter Notebook</a></li>
 <li><a href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino">11. Access the same Data Pipeline Tables with Different Query Engines (Trino)</a>
 <ul class="sectlevel2">
-<li><a href="#_1_connect_to_trino_cli">11.1. 1. Connect to Trino CLI</a></li>
+<li><a href="#_connect_to_trino_cli">11.1. Connect to Trino CLI</a></li>
 <li><a href="#_find_duplicate_soda_rows_in_the_raw_table">11.2. Find duplicate “Soda” rows in the RAW table</a></li>
 <li><a href="#_delete_the_extra_duplicates">11.3. Delete the extra duplicates</a></li>
 <li><a href="#_verify_the_duplicates_are_gone">11.4. Verify the duplicates are gone</a></li>
@@ -426,6 +426,11 @@ only the tables that executor may touch.</p></td>
 In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on <strong>Ceph Object Gateway (RGW)</strong> and is governed by the <strong>Polaris</strong> data‑catalog.
 You will automate the infrastructure with Terraform, ingest data with Spark, query it with Trino, and visualise it in Superset—while watching catalog‑level RBAC enforce least‑privilege at every step.
 </blockquote>
+</div>
+<div class="imageblock right padded">
+<div class="content">
+<img src="_images/add1.png" alt="add1" width="190">
+</div>
 </div>
 <div class="sect2">
 <h3 id="_context_for_our_real_life_use_case_retailanalytics"><a class="anchor" href="#_context_for_our_real_life_use_case_retailanalytics"></a>4.1. Context for our Real Life Use Case: retail‑analytics</h3>
@@ -858,7 +863,7 @@ credentials_profile = "polaris-root"
 bucket_name         = "polarisdemo"
 
 # The numerical “account ID” that Ceph assigns when you ran `radosgw-admin account create`
-account_arn         = "RGW59183818904979875"  &lt;&lt;----- Modify this one!
+account_arn         = "RGWXXXXXXXXXXXXX"  &lt;&lt;----- Modify this one!
 
 # Object-storage URI the Polaris container should treat as its warehouse
 location            = "s3://polarisdemo"</code></pre>
@@ -1064,7 +1069,7 @@ Resources:</p>
         "catalog_client_policy"
     ]
 }
-[root@ceph-workstation-685988cc06f597e7ef15b041 ceph]# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
+# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
 {
     "RoleName": "client",
     "PolicyName": "catalog_client_policy",
@@ -1095,7 +1100,7 @@ Resources:</p>
 <div class="sect2">
 <h3 id="_introduction"><a class="anchor" href="#_introduction"></a>8.1. Introduction</h3>
 <div class="paragraph">
-<p>With storage and IAM wiring complete, bring the <strong>analytic tier</strong> online.
+<p>With storage and IAM wiring complete, bring the <strong>analytic compute tier</strong> online.
 One Podman‑Compose file spins up four services:</p>
 </div>
 <div class="ulist">
@@ -1193,7 +1198,7 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 <div class="paragraph">
 <p>Our FreshGoods pipeline already has <strong>storage</strong> (a Ceph bucket <code>polarisdemo</code>) and <strong>compute</strong>
 (Spark, Trino, Superset) Containers runing.  What it still lacks is a
-<strong>brain/source of truth</strong> —a catalog that knows <strong>which tables exist, who may touch them, and how credentials are issued</strong>.</p>
+<strong>brain/source of truth</strong> —a catalog that knows <strong>which tables exist, who may modify them, and how credentials are issued</strong>.</p>
 </div>
 <div class="paragraph">
 <p>That brain is <strong>Polaris</strong>.  In this section you’ll run the <code>polaris/</code>
@@ -1201,7 +1206,9 @@ Terraform module to automate the governance rules for our Example Data
 Pipeline:</p>
 </div>
 <div class="paragraph">
-<p><strong>Nightly product‑movement CSV drops in → PII masked → morning dashboard out.</strong></p>
+<p><strong>Nightly batch of shops product‑movement drops in CSV format → All PII is
+masked → in the morning data dashboard visualizations are available for the
+stakeholders to take action.</strong></p>
 </div>
 </div>
 <div class="sect2">
@@ -1265,7 +1272,7 @@ RGW admin CLI command:</p>
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
-  default     = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client" &lt; --- MODIFY HERE
+  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client" &lt; --- MODIFY HERE
 }</code></pre>
 </div>
 </div>
@@ -1358,7 +1365,7 @@ export POLARIS_PORT=8181</code></pre>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">cd /root/terraform/polaris
 export DEMO_TOKEN=$(terraform output -raw engineer_token)
-echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
+echo $DEMO_TOKEN</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1397,7 +1404,7 @@ echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash /root/scripts/show_jupyter_notebook_url.sh</code></pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">bash /root/scripts/show_jupiter_notebook_url.sh</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1453,7 +1460,10 @@ echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
 <h2 id="_access_the_same_data_pipeline_tables_with_different_query_engines_trino"><a class="anchor" href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino"></a>11. Access the same Data Pipeline Tables with Different Query Engines (Trino)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls. In this section, we’ll use the Trino CLI against our <code>prod</code> catalog and <code>prod_ns</code> schema—running as the <strong>Engineer</strong> persona—to:</p>
+<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> Icerberg Compatible SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls.</p>
+</div>
+<div class="paragraph">
+<p>In this section, we’ll use the Trino CLI against our <code>prod</code> catalog and <code>prod_ns</code> schema—running as the <strong>Engineer</strong> persona—to:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -1469,12 +1479,13 @@ echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
 </ol>
 </div>
 <div class="paragraph">
-<p>This demonstrates how you get consistent governance across compute engines.</p>
+<p>This demonstrates how you get consistent governance to the centralized datasets stored in Ceph across compute engines.</p>
 </div>
 <div class="sect2">
-<h3 id="_1_connect_to_trino_cli"><a class="anchor" href="#_1_connect_to_trino_cli"></a>11.1. 1. Connect to Trino CLI</h3>
+<h3 id="_connect_to_trino_cli"><a class="anchor" href="#_connect_to_trino_cli"></a>11.1. Connect to Trino CLI</h3>
 <div class="paragraph">
-<p>Make sure you have run at least once the helper script `/root/scripts/show_jupiter_notebook_url.sh `. Then launch:</p>
+<p>Make sure you have run at least once the helper script
+`/root/scripts/show_jupiter_notebook_url.sh ` from your Desktop host terminal. Then launch:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1482,7 +1493,8 @@ echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You should see a prompt like the following, using this prompt we will run our querys:</p>
+<p>You should see a prompt like the following, using this prompt we will run our
+Trino SQL querys:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1493,7 +1505,8 @@ echo $DEMO_TOKEN | head -c 20; echo "…"</code></pre>
 <div class="sect2">
 <h3 id="_find_duplicate_soda_rows_in_the_raw_table"><a class="anchor" href="#_find_duplicate_soda_rows_in_the_raw_table"></a>11.2. Find duplicate “Soda” rows in the RAW table</h3>
 <div class="paragraph">
-<p>Now switch to the RAW table and look for any products named “Soda” that appear more than once:</p>
+<p>We will run a SQL query that looks for any products named “Soda” that appear
+more than once in the <code>products_raw</code> table.</p>
 </div>
 <div class="listingblock">
 <div class="content">

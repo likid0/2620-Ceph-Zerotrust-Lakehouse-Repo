@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ─── Config ───────────────────────────────────────────────────────────────────
-TOKENS_JSON="${TOKENS_JSON:-./notebooks/tokens.json}"
+TOKENS_JSON="${TOKENS_JSON:-/root/lakehouse/notebooks/tokens.json}"
 DEFAULT_PRINCIPAL="${DEFAULT_PRINCIPAL:-engineer}"
 
 # pick principal from $1 or default; shift it off so $@ is only the real CLI args

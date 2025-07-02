@@ -129,15 +129,20 @@ only the tables that executor may touch.
 
 == Lab Introduction
 
+
+
 [abstract]
 In this hands‑on lab you will stand up a miniature—but fully functional—zero‑trust data lake that lives on *Ceph Object Gateway (RGW)* and is governed by the *Polaris* data‑catalog.  
 You will automate the infrastructure with Terraform, ingest data with Spark, query it with Trino, and visualise it in Superset—while watching catalog‑level RBAC enforce least‑privilege at every step.
+
+image::add1.png[float="right",role=padded,width=300]
 
 === Context for our Real Life Use Case: retail‑analytics
 
 Imagine you are the data team for **FreshGoods**, a mid‑size grocery chain that
 ships online orders from 40 local stores.  Every night each store uploads a
-CSV “drop” to Ceph RGW containing the day’s *product movement* log:
+CSV “drop” to Ceph RGW containing the day’s *product sales* log, the dataset
+contains the following columns:
 
 * `product_id` • what was sold
 * `category`   • department (dairy, produce, pantry …)
@@ -146,10 +151,10 @@ CSV “drop” to Ceph RGW containing the day’s *product movement* log:
 * `email`      • customer loyalty‑card e‑mail (PII we must protect)
 * timestamps, etc.
 
-*Your mission in this lab:* turn those raw files into insight the business can
-act on 9 a.m.**—without ever letting unauthorised eyes near the PII.
+*Your mission in this lab:* turn those ingested CSV raw files into insight the business can
+act on during the next morning —without ever letting unauthorised eyes near the PII.
 
-We will walk you through that journey in the lab, compressed into 90 minutes:
+We will walk you through that journey in this lab, compressed into 90 minutes:
 
 . **Ingest (Engineer ➜ Spark)**
   The *data‑engineer* persona lands last night’s CSV into an **Iceberg RAW
@@ -170,12 +175,11 @@ We will walk you through that journey in the lab, compressed into 90 minutes:
   vs. previous day*—the chart the merchandisers see at roll‑call every
   morning.  The hashed emails never leave the lake; the analyst never sees PII.
 
-The glue that enforces who can touch what is **Polaris** CatalogI.
+The glue that enforces who can access what is ithe **Polaris** Iceberg Restfull Catalog.
 
 By the end of the lab you’ll have a governed catalog exactly like a real
 retailer might run—just shrunk to one bucket, two tables, and four personas so
 we can see the whole life‑cycle in a single sitting.
-
 
 === Lab Workflow
 
@@ -331,6 +335,8 @@ aws --profile polaris-root s3 mb s3://polarisdemo
 Before we launch Spark, Trino, or Polaris we need a secure *landing zone* inside Ceph’s Object Gateway (RGW).
 Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in **Terraform**—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.
 
+image::add2.png[float="right",role=padded,width=300]
+
 === Why automate this step?
 
 * **Consistency & repeatability** – Everyone in the team provisions the *exact* same resources , every time, with a single command.
@@ -400,7 +406,7 @@ credentials_profile = "polaris-root"
 bucket_name         = "polarisdemo"
 
 # The numerical “account ID” that Ceph assigns when you ran `radosgw-admin account create`
-account_arn         = "RGW59183818904979875"  <<----- Modify this one!
+account_arn         = "RGWXXXXXXXXXXXXX"  <<----- Modify this one!
 
 # Object-storage URI the Polaris container should treat as its warehouse
 location            = "s3://polarisdemo"
@@ -551,7 +557,7 @@ The Role Policy that defines what S3 resources that Polaris can Access once it a
         "catalog_client_policy"
     ]
 }
-[root@ceph-workstation-685988cc06f597e7ef15b041 ceph]# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
+# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
 {
     "RoleName": "client",
     "PolicyName": "catalog_client_policy",
@@ -577,7 +583,7 @@ The Role Policy that defines what S3 resources that Polaris can Access once it a
 
 === Introduction
 
-With storage and IAM wiring complete, bring the *analytic tier* online.
+With storage and IAM wiring complete, bring the *analytic compute tier* online.
 One Podman‑Compose file spins up four services:
 
 * Polaris control‑plane and Iceberg REST catalog
@@ -630,13 +636,19 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 === Introduction
 Our FreshGoods pipeline already has **storage** (a Ceph bucket `polarisdemo`) and **compute**
 (Spark, Trino, Superset) Containers runing.  What it still lacks is a
-*brain/source of truth* —a catalog that knows *which tables exist, who may touch them, and how credentials are issued*.
+*brain/source of truth* —a catalog that knows *which tables exist, who may modify them, and how credentials are issued*.
+
 
 That brain is **Polaris**.  In this section you’ll run the `polaris/`
 Terraform module to automate the governance rules for our Example Data
 Pipeline:
 
-*Nightly product‑movement CSV drops in → PII masked → morning dashboard out.*
+*Nightly batch of shops product‑movement drops in CSV format → All PII is
+masked → in the morning data dashboard visualizations are available for the
+stakeholders to take action.*
+
+image::add2.png[float="right",role=padded,width=300]
+
 
 === What the module builds
 
@@ -677,7 +689,7 @@ You can then edit the terraform variabled file and use your labs role ARN:
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
-  default     = "arn:aws:iam::RGW59183818904979875:role/polaris/catalog/client" < --- MODIFY HERE
+  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client" < --- MODIFY HERE
 }
 ----
 
@@ -742,7 +754,7 @@ We’ll use the “engineer” token for this example (you can repeat for any pe
 ----
 cd /root/terraform/polaris
 export DEMO_TOKEN=$(terraform output -raw engineer_token)
-echo $DEMO_TOKEN | head -c 20; echo "…"
+echo $DEMO_TOKEN
 ----
 
 If you see a long base64‑style string, you’re good.
@@ -770,7 +782,7 @@ Run the helper script to print your JupyterLab URL and access token:
 
 [source,bash]
 ----
-bash /root/scripts/show_jupyter_notebook_url.sh
+bash /root/scripts/show_jupiter_notebook_url.sh
 ----
 
 Copy the printed URL (including the `?token=…` query) into your VNC Desktop browser’s address bar.
@@ -797,24 +809,30 @@ By the end of this notebook you will have run a full end‑to‑end Spark data p
 
 == Access the same Data Pipeline Tables with Different Query Engines (Trino)
 
-Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_ns` schema—running as the **Engineer** persona—to:
+Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** Icerberg Compatible SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. 
+
+In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_ns` schema—running as the **Engineer** persona—to:
 
 . Find “Soda” duplicates in the RAW table
 . Delete the extra rows
 . Confirm the duplicates are gone
 
-This demonstrates how you get consistent governance across compute engines.
+This demonstrates how you get consistent governance to the centralized datasets stored in Ceph across compute engines.
 
-=== 1. Connect to Trino CLI
+image::add3.png[float="right",role=padded,width=300]
 
-Make sure you have run at least once the helper script `/root/scripts/show_jupiter_notebook_url.sh `. Then launch:
+=== Connect to Trino CLI
+
+Make sure you have run at least once the helper script
+`/root/scripts/show_jupiter_notebook_url.sh ` from your Desktop host terminal. Then launch:
 
 [source,bash]
 ----
 bash /root/lakehouse/trino-cli.sh
 ----
 
-You should see a prompt like the following, using this prompt we will run our querys:
+You should see a prompt like the following, using this prompt we will run our
+Trino SQL querys:
 
 ----
 trino:prod_ns>
@@ -822,7 +840,8 @@ trino:prod_ns>
 
 === Find duplicate “Soda” rows in the RAW table
 
-Now switch to the RAW table and look for any products named “Soda” that appear more than once:
+We will run a SQL query that looks for any products named “Soda” that appear
+more than once in the `products_raw` table.
 
 [source,bash]
 ----
@@ -929,6 +948,8 @@ This illustrates the power of a unified, governed Iceberg catalog for multi‑en
 === Goal
 Create a bar chart that shows the ten products with the highest revenue and
 place it on the existing *Sales Overview* dashboard.
+
+image::add4.png[float="right",role=padded,width=300]
 
 ===  Query the data in **SQL Lab**
 
