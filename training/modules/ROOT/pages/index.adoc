@@ -160,6 +160,8 @@ contains the following columns:
 * `email`      • customer loyalty‑card e‑mail (PII we must protect)
 * timestamps, etc.
 
+image::logo.png[float="right",role=padded,width=300]
+
 *Your mission in this lab:* turn those ingested CSV raw files into insight the business can
 act on during the next morning —without ever letting unauthorised eyes near the PII.
 
