@@ -132,7 +132,7 @@
 <li><a href="#_verification">8.3. Verification</a></li>
 </ul>
 </li>
-<li><a href="#_bootstrap_a_polaris_data_catalog_via_terraform">9. Bootstrap a Polaris data catalog via Terraform</a>
+<li><a href="#_bootstrap_the_polaris_data_catalog_via_terraform">9. Bootstrap The Polaris Data Catalog via Terraform</a>
 <ul class="sectlevel2">
 <li><a href="#_introduction_2">9.1. Introduction</a></li>
 <li><a href="#_what_the_module_builds">9.2. What the module builds</a></li>
@@ -176,7 +176,8 @@
 <h2 id="_lab_introduction"><a class="anchor" href="#_lab_introduction"></a>1. Lab Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>In this guided exercise you will construct a Zero‑Trust data‑lakehouse prototype on IBM Storage Ceph Object Storage and verify that it remains secure, auditable, and performant throughout a complete analytics lifecycle. The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.</p>
+<p>In this guided exercise you will construct a Zero‑Trust data‑lakehouse
+prototype on IBM Storage Ceph Object Storage .The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.</p>
 </div>
 <div class="imageblock right padded">
 <div class="content">
@@ -189,13 +190,14 @@
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p>Establish the Ceph‑backed landing zone and create a dedicated S3 tenant to isolate analytic workloads.</p>
+<p>Establish the Object Storage Ceph‑backed landing zone creating a dedicated S3
+IAM Account to isolate the analytic workloads.</p>
 </li>
 <li>
 <p>Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by Ceph RGW—no proxy, no performance penalty.</p>
 </li>
 <li>
-<p>Deploy the analytics stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.</p>
+<p>Deploy the analytics Compute Stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.</p>
 </li>
 <li>
 <p>Execute an end‑to‑end workflow: ingest raw objects, transform them into Iceberg tables, validate data quality, and present results in a dashboard.</p>
@@ -206,15 +208,8 @@
 </ol>
 </div>
 <div class="paragraph">
-<p>Two possible learning paths are available:</p>
-</div>
-<div class="paragraph">
-<p><strong>Conceptual first</strong> – Chapters 2 &amp; 3.
-Review the governance challenges inherent to lakehouse designs and see how Ceph, Iceberg, and Polaris combine to address them.</p>
-</div>
-<div class="paragraph">
-<p><strong>Hands‑on Lab</strong> – Chapter 4 onward.
-Proceed directly to the hands-on lab instructions and assemble the environment step by step.</p>
+<p>You can get some context on the Data Lakehouse Governance desing challenges by reading Chapters 2 &amp; 3.
+Or Proceed directly to the hands-on lab instructions in Chapter 4</p>
 </div>
 <div class="paragraph">
 <p>By the conclusion of the lab you will have a working reference implementation and a clear understanding of how Zero‑Trust principles can be applied to large‑scale analytics on IBM Storage Ceph.</p>
@@ -542,7 +537,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>Login to Ceph Dashboard</strong> – create RGW account &amp; root user.</p>
+<p><strong>From the Terminal CLI</strong> – create RGW account &amp; root user.</p>
 </li>
 <li>
 <p><strong>Run Terraform (<code>ceph/</code>)</strong> – wire bucket &amp; IAM.</p>
@@ -709,7 +704,7 @@ and finally an initial S3 bucket that Polaris will use in later steps.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Writes a new tenant record named <code>analytics</code> into the RGW metadata store</p>
+<p>Creatre a new account named <code>analytics</code> in the RGW metadata store</p>
 </li>
 <li>
 <p>Returns an <strong>Account ID</strong> (keep it; we need it for the next step)</p>
@@ -727,7 +722,7 @@ and finally an initial S3 bucket that Polaris will use in later steps.</p>
 <pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">radosgw-admin user create \
   --uid=analytics_root \
   --display-name=root_analytics_user \
-  --account-id=RGW59183818904979875 \
+  --account-id=&lt;RGWXXXXXXXXXXXXXX&gt; \
   --account-root \
   --access-key=demo \
   --secret-key=demo</code></pre>
@@ -757,7 +752,8 @@ convenience (never do this in production!)</p>
 <div class="sect2">
 <h3 id="_create_the_polarisdemo_bucket"><a class="anchor" href="#_create_the_polarisdemo_bucket"></a>6.3. Create the <strong>polarisdemo</strong> bucket</h3>
 <div class="paragraph">
-<p>Now that we have credentials, we can use the standard AWS CLI</p>
+<p>Now that we have credentials, we can use the standard AWS CLI, the credentials
+have been pre-configured for you.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1044,7 +1040,7 @@ Resources:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-users
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-users --region default
 {
     "Users": [
         {
@@ -1063,7 +1059,7 @@ Resources:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles --region default
 {
     "Roles": [
         {
@@ -1096,13 +1092,13 @@ Resources:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-role-policies --role-name client
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-role-policies --role-name client --region default
 {
     "PolicyNames": [
         "catalog_client_policy"
     ]
 }
-# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
+# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy --region default
 {
     "RoleName": "client",
     "PolicyName": "catalog_client_policy",
@@ -1229,14 +1225,14 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 </div>
 </div>
 <div class="sect1">
-<h2 id="_bootstrap_a_polaris_data_catalog_via_terraform"><a class="anchor" href="#_bootstrap_a_polaris_data_catalog_via_terraform"></a>9. Bootstrap a Polaris data catalog via Terraform</h2>
+<h2 id="_bootstrap_the_polaris_data_catalog_via_terraform"><a class="anchor" href="#_bootstrap_the_polaris_data_catalog_via_terraform"></a>9. Bootstrap The Polaris Data Catalog via Terraform</h2>
 <div class="sectionbody">
 <div class="sect2">
 <h3 id="_introduction_2"><a class="anchor" href="#_introduction_2"></a>9.1. Introduction</h3>
 <div class="paragraph">
 <p>Our FreshGoods pipeline already has <strong>storage</strong> (a Ceph bucket <code>polarisdemo</code>) and <strong>compute</strong>
 (Spark, Trino, Superset) Containers runing.  What it still lacks is a
-<strong>brain/source of truth</strong> —a catalog that knows <strong>which tables exist, who may modify them, and how credentials are issued</strong>.</p>
+<strong>brain/source of truth</strong> a catalog that knows <strong>which tables exist, who may modify them, and how credentials are issued</strong>.</p>
 </div>
 <div class="paragraph">
 <p>That brain is <strong>Polaris</strong>.  In this section you’ll run the <code>polaris/</code>
@@ -1303,7 +1299,7 @@ RGW admin CLI command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles | jq .Roles[0].Arn</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles --region default | jq .Roles[0].Arn</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1311,7 +1307,7 @@ RGW admin CLI command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># vi variables.tf
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># vi /root/terraform/polaris/variables.tf
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
@@ -1488,6 +1484,18 @@ echo $DEMO_TOKEN</code></pre>
 </div>
 <div class="paragraph">
 <p>You can run cells one by one using the &gt; button, and  waiting to get the output before running the next cell:</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Step 2 of the notebook <code>Spark Sessions setup</code> may take around 1 minute to produce output
+</td>
+</tr>
+</table>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -1717,7 +1725,8 @@ place it on the existing <strong>Sales Overview</strong> dashboard.</p>
 </td>
 <td class="content">
 <div class="paragraph">
-<p>Log in to Superset with <strong>user =<code>admin</code> / password =<code>admin</code></strong>.
+<p>Log in to Superset from your Desktop Firefox Browser, open a new tab a user
+<strong>URL: http//localhost:8088</strong>  with <strong>user =<code>admin</code> / password =<code>admin</code></strong>.
 The container resets these credentials every time it (re)starts.</p>
 </div>
 </td>
@@ -1833,8 +1842,12 @@ LIMIT 10;</code></pre>
 </tbody>
 </table>
 <div class="paragraph">
-<p>Click <b class="button">Update chart</b>
-image::Superset5.png[Populated Data tab,1800]</p>
+<p>Click <b class="button">Update chart</b></p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/superset5.png" alt="Populated Data tab" width="1800">
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -1869,8 +1882,7 @@ image::Superset5.png[Populated Data tab,1800]</p>
 Fill in:
   * <strong>Chart name</strong> :: <code>Top‑10 Products by Revenue</code>
   * <strong>Add to dashboard</strong> ::
-    <strong> If <strong>Sales Overview</strong> exists → choose it.
-    </strong> Otherwise → <strong>+ New dashboard</strong> → <code>Sales Overview</code>.
+    ** Fresh Goods Dashboard
 Click <b class="button">Save &amp; Go to dashboard</b>.</p>
 </div>
 <div class="imageblock">

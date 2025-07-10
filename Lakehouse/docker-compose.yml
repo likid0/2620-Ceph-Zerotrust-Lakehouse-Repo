@@ -31,7 +31,7 @@ services:
     container_name: polaris
 
   trino:
-    image: docker.io/trinodb/trino:latest
+    image: docker.io/trinodb/trino:476
     container_name: trino
     depends_on:
       - polaris
@@ -114,7 +114,6 @@ services:
           --lastname  Admin2 \
           --email     admin@admin.com \
           --password  admin &&
-        uv pip install --no-cache-dir sqlalchemy-trino trino
         superset import-datasources -p /app/import/superset_dataset.zip  --username admin
         superset import-dashboards -p /app/import/superset_dash.zip --username admin
         # 3) finally launch the web server

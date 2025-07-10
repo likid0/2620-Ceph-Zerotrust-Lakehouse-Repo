@@ -17,29 +17,26 @@
 = Welcome to the IBM Storage Ceph ZeroTrust LakeHouse Lab!
 
 == Lab Introduction
-In this guided exercise you will construct a Zero‑Trust data‑lakehouse prototype on IBM Storage Ceph Object Storage and verify that it remains secure, auditable, and performant throughout a complete analytics lifecycle. The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.
+In this guided exercise you will construct a Zero‑Trust data‑lakehouse
+prototype on IBM Storage Ceph Object Storage .The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.
 
 image::ceph_Datalake.png[float="right",role=padded,width=190]
 
 Over an estimated 90 minutes you will:
 
-. Establish the Ceph‑backed landing zone and create a dedicated S3 tenant to isolate analytic workloads.
+. Establish the Object Storage Ceph‑backed landing zone creating a dedicated S3
+  IAM Account to isolate the analytic workloads.
 
 . Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by Ceph RGW—no proxy, no performance penalty.
 
-. Deploy the analytics stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.
+. Deploy the analytics Compute Stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.
 
 . Execute an end‑to‑end workflow: ingest raw objects, transform them into Iceberg tables, validate data quality, and present results in a dashboard.
 
 . Inspect and verify the security posture at each stage to confirm that Zero‑Trust requirements are met.
 
-Two possible learning paths are available:
-
-*Conceptual first* – Chapters 2 & 3.
-Review the governance challenges inherent to lakehouse designs and see how Ceph, Iceberg, and Polaris combine to address them.
-
-*Hands‑on Lab* – Chapter 4 onward.
-Proceed directly to the hands-on lab instructions and assemble the environment step by step.
+You can get some context on the Data Lakehouse Governance desing challenges by reading Chapters 2 & 3.
+Or Proceed directly to the hands-on lab instructions in Chapter 4
 
 By the conclusion of the lab you will have a working reference implementation and a clear understanding of how Zero‑Trust principles can be applied to large‑scale analytics on IBM Storage Ceph.
 
@@ -195,7 +192,7 @@ we can see the whole life‑cycle in a single sitting.
 === Lab Workflow
 
 image::workflow_lab.png[align=center, role=diagram]
-. *Login to Ceph Dashboard* – create RGW account & root user.
+. *From the Terminal CLI* – create RGW account & root user.
 . *Run Terraform (`ceph/`)* – wire bucket & IAM.
 . *Start containers* – Polaris, Trino, Jupyter, Superset in one command.
 . *Run Terraform (`polaris/`)* – create catalog, principals, RAW + GOLD tables.
@@ -297,7 +294,7 @@ radosgw-admin account create --account-name=analytics
 
 *What it does*
 
-* Writes a new tenant record named `analytics` into the RGW metadata store
+* Creatre a new account named `analytics` in the RGW metadata store
 * Returns an **Account ID** (keep it; we need it for the next step)
 
 === Create the root user for that tenant
@@ -309,7 +306,7 @@ Replace `RGW59183818904979875` with the Account ID you got above:
 radosgw-admin user create \
   --uid=analytics_root \
   --display-name=root_analytics_user \
-  --account-id=RGW59183818904979875 \
+  --account-id=<RGWXXXXXXXXXXXXXX> \
   --account-root \
   --access-key=demo \
   --secret-key=demo
@@ -326,7 +323,8 @@ You should see JSON output showing the UID, Account‑ID, and the two keys.
 
 === Create the **polarisdemo** bucket
 
-Now that we have credentials, we can use the standard AWS CLI
+Now that we have credentials, we can use the standard AWS CLI, the credentials
+have been pre-configured for you.
 
 [source,shell]
 ----
@@ -514,7 +512,7 @@ Bucket:
 The User that polaris will use to assume the role:
 
 ----
-# aws --profile polaris-root iam list-users
+# aws --profile polaris-root iam list-users --region default
 {
     "Users": [
         {
@@ -531,7 +529,7 @@ The User that polaris will use to assume the role:
 The Role that Polaris will assume to get access to the S3 Resources:
 
 ----
-# aws --profile polaris-root iam list-roles
+# aws --profile polaris-root iam list-roles --region default
 {
     "Roles": [
         {
@@ -562,13 +560,13 @@ The Role that Polaris will assume to get access to the S3 Resources:
 The Role Policy that defines what S3 resources that Polaris can Access once it assumes the Role:
 
 ----
-# aws --profile polaris-root iam list-role-policies --role-name client
+# aws --profile polaris-root iam list-role-policies --role-name client --region default
 {
     "PolicyNames": [
         "catalog_client_policy"
     ]
 }
-# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy
+# aws --profile polaris-root iam get-role-policy --role-name client --policy-name catalog_client_policy --region default
 {
     "RoleName": "client",
     "PolicyName": "catalog_client_policy",
@@ -644,12 +642,12 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
   s...        3 hours ago                                     Up 3 hours  0.0.0.0:8088->8088/tcp  superset
 ----
 
-== Bootstrap a Polaris data catalog via Terraform
+== Bootstrap The Polaris Data Catalog via Terraform
 
 === Introduction
 Our FreshGoods pipeline already has **storage** (a Ceph bucket `polarisdemo`) and **compute**
 (Spark, Trino, Superset) Containers runing.  What it still lacks is a
-*brain/source of truth* —a catalog that knows *which tables exist, who may modify them, and how credentials are issued*.
+*brain/source of truth* a catalog that knows *which tables exist, who may modify them, and how credentials are issued*.
 
 
 That brain is **Polaris**.  In this section you’ll run the `polaris/`
@@ -692,13 +690,13 @@ ARN with the account ID included, we can get our role ARN with the following
 RGW admin CLI command:
 
 ----
-# aws --profile polaris-root iam list-roles | jq .Roles[0].Arn
+# aws --profile polaris-root iam list-roles --region default | jq .Roles[0].Arn
 ----
 
 You can then edit the terraform variabled file and use your labs role ARN:
 
 ----
-# vi variables.tf
+# vi /root/terraform/polaris/variables.tf
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
@@ -815,6 +813,8 @@ Follow the notebook cells in order.  Each cell contains explanatory markdown alo
   * (Bonus) Validate that unauthorized personas cannot see or write data they shouldn’t
 
 You can run cells one by one using the > button, and  waiting to get the output before running the next cell:
+
+IMPORTANT: Step 2 of the notebook `Spark Sessions setup` may take around 1 minute to produce output
 
 image::jup3.png[jupiter3,1800]
 
@@ -975,7 +975,8 @@ place it on the existing *Sales Overview* dashboard.
 
 [NOTE]
 ====
-Log in to Superset with **user =`admin` / password =`admin`**.
+Log in to Superset from your Desktop Firefox Browser, open a new tab a user
+**URL: http//localhost:8088**  with **user =`admin` / password =`admin`**.
 The container resets these credentials every time it (re)starts.
 ====
 
@@ -1034,7 +1035,8 @@ image::Superset4.png[Pie Chart,1800]
 |===
 
 Click btn:[Update chart]
-image::Superset5.png[Populated Data tab,1800]
+
+image::superset5.png[Populated Data tab,1800]
 
 ==== Tidy up in the *Customize* tab (optional)
 
@@ -1052,8 +1054,7 @@ Click btn:[Save].
 Fill in:
   * *Chart name* :: `Top‑10 Products by Revenue`
   * *Add to dashboard* ::
-    ** If *Sales Overview* exists → choose it.
-    ** Otherwise → **+ New dashboard** → `Sales Overview`.
+    ** Fresh Goods Dashboard
 Click btn:[Save & Go to dashboard].
 
 image::superset7.png[Advanced,1800]
