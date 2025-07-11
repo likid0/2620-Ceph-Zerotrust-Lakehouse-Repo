@@ -289,24 +289,22 @@ The command below runs on our Desktop hosts:
 
 [source,shell]
 ----
-radosgw-admin account create --account-name=analytics
+ACCOUNT_ID=$(radosgw-admin account create --account-name=analytics | jq -r '.id')
 ----
 
 *What it does*
 
 * Creatre a new account named `analytics` in the RGW metadata store
-* Returns an **Account ID** (keep it; we need it for the next step)
+* Exports the **Account ID** as a variable to be used in the next step
 
 === Create the root user for that tenant
-
-Replace `RGW59183818904979875` with the Account ID you got above:
 
 [source,shell]
 ----
 radosgw-admin user create \
   --uid=analytics_root \
   --display-name=root_analytics_user \
-  --account-id=<RGWXXXXXXXXXXXXXX> \
+  --account-id="$ACCOUNT_ID" \
   --account-root \
   --access-key=demo \
   --secret-key=demo
@@ -391,16 +389,16 @@ You only need to modify the RGW Account ID to match te Account ID you created
 on your LAB Environment, the rest of the variables are already filled in for
 you.
 
-from the CLI you can get your Account ID with:
+from the CLI you can get your Account ID into an ENV variable, and inject it
+into the Terraform variables file:
 
 ```
-# radosgw-admin account list
-[
-    "RGW59183818904979875"
-]
+# ACCOUNT_ID=$(radosgw-admin account list | jq -r '.[0]')
+# sed -i "s/^account_arn\s*=.*/account_arn         = \"$ACCOUNT_ID\"/" /root/terraform/ceph/terraform.tfvars
 ```
 
-Then edit the `/root/terraform/ceph/terraform.tfvars` and modify the `account_arn`:
+List the contents of the file `/root/terraform/ceph/terraform.tfvars` and
+verify the `account_arn`:
 
 ----
 # vi /root/terraform/ceph/terraform.tfvars
@@ -415,7 +413,7 @@ credentials_profile = "polaris-root"
 bucket_name         = "polarisdemo"
 
 # The numerical “account ID” that Ceph assigns when you ran `radosgw-admin account create`
-account_arn         = "RGWXXXXXXXXXXXXX"  <<----- Modify this one!
+account_arn         = "RGWXXXXXXXXXXXXX"  <<----- The account_arn should list your account ID
 
 # Object-storage URI the Polaris container should treat as its warehouse
 location            = "s3://polarisdemo"
@@ -687,20 +685,22 @@ In our Desktop the directory that contains the Polaris Terraform code is
 `/root/terraform/polaris` , the variables file is called `variables.tf`, the
 only parameter we need to change is the `s3_role_arn` so that it has our Role
 ARN with the account ID included, we can get our role ARN with the following
-RGW admin CLI command:
+RGW admin CLI command, we are going to export it into an ENV and then inject it
+into a file.
 
 ----
-# aws --profile polaris-root iam list-roles --region default | jq .Roles[0].Arn
+ROLE_ARN=$(aws --profile polaris-root iam list-roles --region default | jq -r '.Roles[0].Arn')
+sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$ROLE_ARN"'"|' /root/terraform/polaris/variables.tf
 ----
 
-You can then edit the terraform variabled file and use your labs role ARN:
+You can then check the terraform variabled file and use your labs role ARN:
 
 ----
 # vi /root/terraform/polaris/variables.tf
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
-  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client" < --- MODIFY HERE
+  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client" < --- CHECK HERE for your RGW Account
 }
 ----
 

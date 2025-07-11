@@ -695,7 +695,7 @@ and finally an initial S3 bucket that Polaris will use in later steps.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">radosgw-admin account create --account-name=analytics</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">ACCOUNT_ID=$(radosgw-admin account create --account-name=analytics | jq -r '.id')</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -707,22 +707,19 @@ and finally an initial S3 bucket that Polaris will use in later steps.</p>
 <p>Creatre a new account named <code>analytics</code> in the RGW metadata store</p>
 </li>
 <li>
-<p>Returns an <strong>Account ID</strong> (keep it; we need it for the next step)</p>
+<p>Exports the <strong>Account ID</strong> as a variable to be used in the next step</p>
 </li>
 </ul>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_create_the_root_user_for_that_tenant"><a class="anchor" href="#_create_the_root_user_for_that_tenant"></a>6.2. Create the root user for that tenant</h3>
-<div class="paragraph">
-<p>Replace <code>RGW59183818904979875</code> with the Account ID you got above:</p>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">radosgw-admin user create \
   --uid=analytics_root \
   --display-name=root_analytics_user \
-  --account-id=&lt;RGWXXXXXXXXXXXXXX&gt; \
+  --account-id="$ACCOUNT_ID" \
   --account-root \
   --access-key=demo \
   --secret-key=demo</code></pre>
@@ -865,18 +862,18 @@ on your LAB Environment, the rest of the variables are already filled in for
 you.</p>
 </div>
 <div class="paragraph">
-<p>from the CLI you can get your Account ID with:</p>
+<p>from the CLI you can get your Account ID into an ENV variable, and inject it
+into the Terraform variables file:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># radosgw-admin account list
-[
-    "RGW59183818904979875"
-]</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ACCOUNT_ID=$(radosgw-admin account list | jq -r '.[0]')
+# sed -i "s/^account_arn\s*=.*/account_arn         = \"$ACCOUNT_ID\"/" /root/terraform/ceph/terraform.tfvars</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Then edit the <code>/root/terraform/ceph/terraform.tfvars</code> and modify the <code>account_arn</code>:</p>
+<p>List the contents of the file <code>/root/terraform/ceph/terraform.tfvars</code> and
+verify the <code>account_arn</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -892,7 +889,7 @@ credentials_profile = "polaris-root"
 bucket_name         = "polarisdemo"
 
 # The numerical “account ID” that Ceph assigns when you ran `radosgw-admin account create`
-account_arn         = "RGWXXXXXXXXXXXXX"  &lt;&lt;----- Modify this one!
+account_arn         = "RGWXXXXXXXXXXXXX"  &lt;&lt;----- The account_arn should list your account ID
 
 # Object-storage URI the Polaris container should treat as its warehouse
 location            = "s3://polarisdemo"</code></pre>
@@ -1295,15 +1292,17 @@ outputs so your different Query Engines: notebook, Trino CLI, and Superset pick 
 <code>/root/terraform/polaris</code> , the variables file is called <code>variables.tf</code>, the
 only parameter we need to change is the <code>s3_role_arn</code> so that it has our Role
 ARN with the account ID included, we can get our role ARN with the following
-RGW admin CLI command:</p>
+RGW admin CLI command, we are going to export it into an ENV and then inject it
+into a file.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># aws --profile polaris-root iam list-roles --region default | jq .Roles[0].Arn</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">ROLE_ARN=$(aws --profile polaris-root iam list-roles --region default | jq -r '.Roles[0].Arn')
+sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$ROLE_ARN"'"|' /root/terraform/polaris/variables.tf</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>You can then edit the terraform variabled file and use your labs role ARN:</p>
+<p>You can then check the terraform variabled file and use your labs role ARN:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1311,7 +1310,7 @@ RGW admin CLI command:</p>
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
-  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client" &lt; --- MODIFY HERE
+  default     = "arn:aws:iam::RGWXXXXXXXXXXXXXXXX:role/polaris/catalog/client" &lt; --- CHECK HERE for your RGW Account
 }</code></pre>
 </div>
 </div>
