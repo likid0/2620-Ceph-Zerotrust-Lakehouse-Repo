@@ -117,4 +117,5 @@ podman pull docker.io/jupyter/pyspark-notebook:spark-3.5.0
 podman pull docker.io/trinodb/trino:476
 podman pull quay.io/polaris-catalog/polaris:s3compatible
 podman pull docker.io/apache/superset:v5.0.0
+podman pull docker.io/bitnami/spark:3.5
 exit 0

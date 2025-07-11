@@ -401,7 +401,7 @@ List the contents of the file `/root/terraform/ceph/terraform.tfvars` and
 verify the `account_arn`:
 
 ----
-# vi /root/terraform/ceph/terraform.tfvars
+# cat /root/terraform/ceph/terraform.tfvars
 # Ceph object-gateway (RGW) HTTPS endpoint, used for S3 **and** STS/IAM calls
 ceph_endpoint       = "http://ceph-node2"
 
@@ -689,14 +689,14 @@ RGW admin CLI command, we are going to export it into an ENV and then inject it
 into a file.
 
 ----
-ROLE_ARN=$(aws --profile polaris-root iam list-roles --region default | jq -r '.Roles[0].Arn')
-sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$ROLE_ARN"'"|' /root/terraform/polaris/variables.tf
+# ROLE_ARN=$(aws --profile polaris-root iam list-roles --region default | jq -r '.Roles[0].Arn')
+# sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$ROLE_ARN"'"|' /root/terraform/polaris/variables.tf
 ----
 
 You can then check the terraform variabled file and use your labs role ARN:
 
 ----
-# vi /root/terraform/polaris/variables.tf
+# cat /root/terraform/polaris/variables.tf
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
@@ -1064,4 +1064,25 @@ Superset redirects you to the dashboard in *Edit* mode with your new bar chart a
 image::Superset8.png[Dashboard with new chart,1800]
 
 You’ve successfully added an interactive visual to your dashboard using nothing but SQL Lab and the chart builder—well done!
+
+== Conclusion: From Buckets to Business Insights
+
+In this lab, you’ve walked through the full lifecycle of a modern, secure, and governed Lakehouse pipeline built entirely on open standards and open source technologies—tied together by Polaris as the central Iceberg catalog.
+
+You:
+
+Provisioned secure IAM policies and S3-style object storage with fine-grained access
+
+Deployed a multi-engine analytics stack with Spark, Trino, Superset, and Jupyter
+
+Automated catalog registration, table creation, and access control using Terraform
+
+Executed a complete ETL pipeline with masking, curation, and validation
+
+Visualized actionable insights via SQL and dashboards
+
+Throughout, Polaris enforced governance and data consistency, enabling secure multi-user access without data duplication or copy-pasting credentials.
+
+This lab has shown how to build a Zero Trust Lakehouse that scales across personas, workloads, and engines — giving your organization both agility and control.
+
 

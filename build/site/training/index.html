@@ -170,6 +170,7 @@
 <li><a href="#_save_the_chart_and_add_to_a_dashboard">12.5. Save the chart and add to a dashboard</a></li>
 </ul>
 </li>
+<li><a href="#_conclusion_from_buckets_to_business_insights">13. Conclusion: From Buckets to Business Insights</a></li>
 </ul>
 </div>
 <div class="sect1">
@@ -877,7 +878,7 @@ verify the <code>account_arn</code>:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># vi /root/terraform/ceph/terraform.tfvars
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cat /root/terraform/ceph/terraform.tfvars
 # Ceph object-gateway (RGW) HTTPS endpoint, used for S3 **and** STS/IAM calls
 ceph_endpoint       = "http://ceph-node2"
 
@@ -1297,8 +1298,8 @@ into a file.</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell">ROLE_ARN=$(aws --profile polaris-root iam list-roles --region default | jq -r '.Roles[0].Arn')
-sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$ROLE_ARN"'"|' /root/terraform/polaris/variables.tf</code></pre>
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># ROLE_ARN=$(aws --profile polaris-root iam list-roles --region default | jq -r '.Roles[0].Arn')
+# sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$ROLE_ARN"'"|' /root/terraform/polaris/variables.tf</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1306,7 +1307,7 @@ sed -i '/variable "s3_role_arn"/,/^}/ s|^\s*default\s*=.*|  default     = "'"$RO
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># vi /root/terraform/polaris/variables.tf
+<pre class="highlightjs highlight"><code class="language-shell hljs" data-lang="shell"># cat /root/terraform/polaris/variables.tf
 variable "s3_role_arn" {
   description = "The AWS IAM role ARN for accessing the S3 storage"
   type        = string
@@ -1900,6 +1901,38 @@ Click <b class="button">Save &amp; Go to dashboard</b>.</p>
 <div class="paragraph">
 <p>You’ve successfully added an interactive visual to your dashboard using nothing but SQL Lab and the chart builder—well done!</p>
 </div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_conclusion_from_buckets_to_business_insights"><a class="anchor" href="#_conclusion_from_buckets_to_business_insights"></a>13. Conclusion: From Buckets to Business Insights</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this lab, you’ve walked through the full lifecycle of a modern, secure, and governed Lakehouse pipeline built entirely on open standards and open source technologies—tied together by Polaris as the central Iceberg catalog.</p>
+</div>
+<div class="paragraph">
+<p>You:</p>
+</div>
+<div class="paragraph">
+<p>Provisioned secure IAM policies and S3-style object storage with fine-grained access</p>
+</div>
+<div class="paragraph">
+<p>Deployed a multi-engine analytics stack with Spark, Trino, Superset, and Jupyter</p>
+</div>
+<div class="paragraph">
+<p>Automated catalog registration, table creation, and access control using Terraform</p>
+</div>
+<div class="paragraph">
+<p>Executed a complete ETL pipeline with masking, curation, and validation</p>
+</div>
+<div class="paragraph">
+<p>Visualized actionable insights via SQL and dashboards</p>
+</div>
+<div class="paragraph">
+<p>Throughout, Polaris enforced governance and data consistency, enabling secure multi-user access without data duplication or copy-pasting credentials.</p>
+</div>
+<div class="paragraph">
+<p>This lab has shown how to build a Zero Trust Lakehouse that scales across personas, workloads, and engines — giving your organization both agility and control.</p>
 </div>
 </div>
 </div>
