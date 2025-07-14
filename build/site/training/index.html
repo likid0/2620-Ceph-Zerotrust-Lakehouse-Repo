@@ -112,7 +112,7 @@
 <li><a href="#_create_the_polarisdemo_bucket">6.3. Create the <strong>polarisdemo</strong> bucket</a></li>
 </ul>
 </li>
-<li><a href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources">7. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</a>
+<li><a href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_objectgateway_rgw_resources">7. Configure and Run the Terraform Automation Code to Create Required Ceph Object Gateway (RGW) resources</a>
 <ul class="sectlevel2">
 <li><a href="#_why_automate_this_step">7.1. Why automate this step?</a></li>
 <li><a href="#_what_the_code_does">7.2. What the code does</a></li>
@@ -195,7 +195,7 @@ prototype on IBM Storage Ceph Object Storage .The lab is organised to famili
 IAM Account to isolate the analytic workloads.</p>
 </li>
 <li>
-<p>Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by Ceph RGW—no proxy, no performance penalty.</p>
+<p>Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by <strong>Ceph Object Gateway (RGW)</strong>, no proxy, no performance penalty.</p>
 </li>
 <li>
 <p>Deploy the analytics Compute Stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.</p>
@@ -410,7 +410,7 @@ only the tables that executor may touch.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Enforce @ Ceph</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">RGW evaluates that policy – no extra proxy hop required.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Ceph Object Gateway (RGW)</strong> evaluates that policy – no extra proxy hop required.</p></td>
 </tr>
 </tbody>
 </table>
@@ -423,13 +423,23 @@ only the tables that executor may touch.</p></td>
 <p><strong>SQL-style grants</strong> (<code>GRANT SELECT</code>, <code>GRANT INSERT</code>) with table level granularity.</p>
 </li>
 <li>
-<p><strong>Least-privilege tokens</strong> Credentials are short-lived, valid for minutes, not months. And with the least priveledges required</p>
+<p><strong>Least-privilege tokens</strong></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Credentials are short-lived, valid for minutes, not months</p>
 </li>
 <li>
-<p><strong>Engine-agnostic</strong> – Spark, Trino, Flink all speak the same Iceberg metadata, so one policy fits all, The Icerbeg catalog is the source of truth.</p>
+<p>And with the least priveledges required</p>
+</li>
+</ul>
+</div>
 </li>
 <li>
-<p><strong>Full speed</strong> – the executor streams Parquet directly from RGW, no proxys needed.</p>
+<p><strong>Engine-agnostic</strong> – Spark, Trino, Flink, etc, all speak the same Iceberg metadata, so one policy fits all, The Iceberg catalog is the source of truth.</p>
+</li>
+<li>
+<p><strong>Full speed</strong> – the executor streams Parquet directly from <strong>Ceph Object Gateway (RGW)</strong>, no proxys needed.</p>
 </li>
 </ul>
 </div>
@@ -455,31 +465,47 @@ You will automate the infrastructure with Terraform, ingest data with Spark, que
 <div class="paragraph">
 <p>Imagine you are the data team for <strong>FreshGoods</strong>, a mid‑size grocery chain that
 ships online orders from 40 local stores.  Every night each store uploads a
-CSV “drop” to Ceph RGW containing the day’s <strong>product sales</strong> log, the dataset
-contains the following columns:</p>
+CSV Batch to <strong>Ceph Object Gateway (RGW)</strong> containing the previous day <strong>product
+sales</strong> data, the shop dataset contains the following columns:</p>
 </div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>product_id</code> • what was sold</p>
-</li>
-<li>
-<p><code>category</code>   • department (dairy, produce, pantry …)</p>
-</li>
-<li>
-<p><code>price</code></p>
-</li>
-<li>
-<p><code>quantity</code></p>
-</li>
-<li>
-<p><code>email</code>      • customer loyalty‑card e‑mail (PII we must protect)</p>
-</li>
-<li>
-<p>timestamps, etc.</p>
-</li>
-</ul>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Column Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>product_id</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unique identifier for the sold product</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>category</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Product department (e.g., dairy, produce, pantry)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>price</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Unit price of the product (in local currency)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>quantity</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Number of units sold</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>email</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Customer email address from loyalty program (PII)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>timestamp</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Date and time of the transaction</p></td>
+</tr>
+</tbody>
+</table>
 <div class="imageblock right padded">
 <div class="content">
 <img src="_images/logo.png" alt="logo" width="300">
@@ -487,7 +513,7 @@ contains the following columns:</p>
 </div>
 <div class="paragraph">
 <p><strong>Your mission in this lab:</strong> turn those ingested CSV raw files into insight the business can
-act on during the next morning —without ever letting unauthorised eyes near the PII.</p>
+act on during the next morning without ever letting unauthorised eyes near the PII.</p>
 </div>
 <div class="paragraph">
 <p>We will walk you through that journey in this lab, compressed into 90 minutes:</p>
@@ -538,7 +564,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 <div class="olist arabic">
 <ol class="arabic">
 <li>
-<p><strong>From the Terminal CLI</strong> – create RGW account &amp; root user.</p>
+<p><strong>From the Terminal CLI</strong> – create <strong>Ceph Object Gateway (RGW)</strong> account &amp; root user.</p>
 </li>
 <li>
 <p><strong>Run Terraform (<code>ceph/</code>)</strong> – wire bucket &amp; IAM.</p>
@@ -577,7 +603,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Storage</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Create Ceph RGW buckets and IAM roles from the dashboard and Terraform.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Create Ceph <strong>Ceph Object Gateway (RGW)</strong> buckets and IAM roles from the dashboard and Terraform.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Infrastructure‑as‑Code</strong></p></td>
@@ -613,7 +639,7 @@ we can see the whole life‑cycle in a single sitting.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Pre‑deployed IBM Storage Ceph cluster with RGW(Object Storage Endpoint) runnig.</p>
+<p>Pre‑deployed IBM Storage Ceph cluster with <strong>Ceph Object Gateway (RGW)</strong> running, that provides our required S3 Endpoint.</p>
 </li>
 <li>
 <p>Lab repository with Terraform code, notebooks, helper scripts, and a 200‑row sample CSV.</p>
@@ -626,9 +652,20 @@ we can see the whole life‑cycle in a single sitting.</p>
 <div class="sect1">
 <h2 id="_checking_the_current_state_of_the_lab"><a class="anchor" href="#_checking_the_current_state_of_the_lab"></a>5. Checking the current state of the lab</h2>
 <div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
 <div class="paragraph">
 <p>If you are reading this doc, you should have your IBM Storage Ceph Lab up and running. If that is not the case, please go
 to the IBM Storage Ceph Tech-Zone Collection and Order the Lab <a href="https://techzone.ibm.com/collection/64b92c8897187f0017773310)">TechZone Lab Access</a></p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>We must open a CLI terminal in our workstation machine and sudo to run the
@@ -662,7 +699,7 @@ we can run most of the necessary commands for this lab from the workstation.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>From the previous command we can verify that we have a healthy running Ceph Cluster amd it has RGW(S3 endpoint) deployed and active</p>
+<p>From the previous command we can verify that we have a healthy running Ceph Cluster amd it has <strong>Ceph Object Gateway (RGW)</strong> , S3 endpoint,  deployed and active</p>
 </div>
 </div>
 </div>
@@ -671,7 +708,7 @@ we can run most of the necessary commands for this lab from the workstation.</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Before Polaris (or any other service) can create time‑bound STS tokens,
-the Ceph RGW must know <strong>which tenant it belongs to</strong> and <strong>who the root
+the Ceph <strong>Ceph Object Gateway (RGW)</strong> must know <strong>which tenant it belongs to</strong> and <strong>who the root
 identity is</strong> for that tenant.
 In Ceph terminology:</p>
 </div>
@@ -692,7 +729,7 @@ and finally an initial S3 bucket that Polaris will use in later steps.</p>
 <div class="sect2">
 <h3 id="_create_theanalytics_tenant"><a class="anchor" href="#_create_theanalytics_tenant"></a>6.1. Create the <strong>analytics</strong> tenant</h3>
 <div class="paragraph">
-<p>The command below runs on our Desktop hosts:</p>
+<p>The command below runs on our Workstation CLI terminal:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -705,7 +742,7 @@ and finally an initial S3 bucket that Polaris will use in later steps.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Creatre a new account named <code>analytics</code> in the RGW metadata store</p>
+<p>Creatre a new account named <code>analytics</code> in the <strong>Ceph Object Gateway (RGW)</strong> metadata store</p>
 </li>
 <li>
 <p>Exports the <strong>Account ID</strong> as a variable to be used in the next step</p>
@@ -777,7 +814,7 @@ later in the workshop</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"><a class="anchor" href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_rgw_resources"></a>7. Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources</h2>
+<h2 id="_configure_and_run_the_terraform_automation_code_to_create_required_ceph_objectgateway_rgw_resources"><a class="anchor" href="#_configure_and_run_the_terraform_automation_code_to_create_required_ceph_objectgateway_rgw_resources"></a>7. Configure and Run the Terraform Automation Code to Create Required Ceph Object Gateway (RGW) resources</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Before we launch Spark, Trino, or Polaris we need a secure <strong>landing zone</strong> inside Ceph’s Object Gateway (RGW).
@@ -820,11 +857,11 @@ Rather than clicking through the Ceph Dashboard by hand, we’ll declare every b
 <tbody>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Variables (<code></strong>.tf</code> <code>variable</code> blocks)*</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Collect user-specific inputs such as the Ceph S3/STS endpoint, the credentials profile that can talk to RGW, and the bucket name that will back the Polaris catalog.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Collect user-specific inputs such as the Ceph S3/STS endpoint, the credentials profile that can talk to <strong>Ceph Object Gateway (RGW)</strong>, and the bucket name that will back the Polaris catalog.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>AWS provider configured for Ceph</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Uses the standard <code>hashicorp/aws</code> provider but points its <code>s3</code>, <code>sts</code>, and <code>iam</code> endpoints to your Ceph cluster, and forces path-style S3 URLs so they work with RGW.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Uses the standard <code>hashicorp/aws</code> provider but points its <code>s3</code>, <code>sts</code>, and <code>iam</code> endpoints to your S3 Object Ceph cluster.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Bucket (data or resource)</strong></p></td>
@@ -839,14 +876,28 @@ Rather than clicking through the Ceph Dashboard by hand, we’ll declare every b
 <td class="tableblock halign-left valign-top"><p class="tableblock">A role that the polaris catalogs assumes via <code>sts:AssumeRole</code> to vend a token
 to the Query Engine(Spark, Trino) asking for access to a Table. It contains a single inline policy (<code>catalog_client_policy</code>) granting <strong>only</strong> <code>s3:*</code> on your warehouse bucket.  Principle of least privilege in action.</p></td>
 </tr>
+</tbody>
+</table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 20%;">
+<col style="width: 80%;">
+</colgroup>
+<thead>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Outputs</strong></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">After <code>terraform apply</code> you get:
-  * <code>bucket_arn</code> – ARN of the warehouse bucket
-  * <code>account_arn</code> – Ceph pseudo-account ID (used in later trust policies)
-  * <code>location</code> – <code>s3://…</code> URI Polaris will register as its warehouse
-  * <code>role_arn</code> – ARN of the client role
-  * <code>admin_access_key</code> / <code>admin_secret_key</code> – keys for the admin user (the secret is marked <strong>sensitive</strong> so Terraform hides it in plan logs)</p></td>
+<th class="tableblock halign-left valign-top"><strong>Outputs</strong></th>
+<th class="tableblock halign-left valign-top"><strong>Description</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">After <code>terraform apply</code> you get:</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">- <code>bucket_arn</code> – ARN of the warehouse bucket
+- <code>account_arn</code> – Ceph RGW account ID (used in later trust policies)
+- <code>location</code> – <code>s3://…</code> URI Polaris will register as its warehouse
+- <code>role_arn</code> – ARN of the client role
+- <code>admin_access_key</code> / <code>admin_secret_key</code> – keys for the admin user
+  (the secret is marked <strong>sensitive</strong>, so Terraform hides it in plan logs)</p></td>
 </tr>
 </tbody>
 </table>
@@ -858,7 +909,7 @@ to the Query Engine(Spark, Trino) asking for access to a Table. It contains a si
 machine at <code>/root/terraform/ceph</code> with the name <code>terraform.tfvars</code>.</p>
 </div>
 <div class="paragraph">
-<p>You only need to modify the RGW Account ID to match te Account ID you created
+<p>You only need to modify the RGW <code>Account ID</code> to match the <code>Account ID</code> you created
 on your LAB Environment, the rest of the variables are already filled in for
 you.</p>
 </div>
@@ -1229,7 +1280,7 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 <h3 id="_introduction_2"><a class="anchor" href="#_introduction_2"></a>9.1. Introduction</h3>
 <div class="paragraph">
 <p>Our FreshGoods pipeline already has <strong>storage</strong> (a Ceph bucket <code>polarisdemo</code>) and <strong>compute</strong>
-(Spark, Trino, Superset) Containers runing.  What it still lacks is a
+(Spark, Trino, Superset) Containers running.  What it still lacks is a
 <strong>brain/source of truth</strong> a catalog that knows <strong>which tables exist, who may modify them, and how credentials are issued</strong>.</p>
 </div>
 <div class="paragraph">
@@ -1238,9 +1289,8 @@ Terraform module to automate the governance rules for our Example Data
 Pipeline:</p>
 </div>
 <div class="paragraph">
-<p><strong>Nightly batch of shops product‑movement drops in CSV format → All PII is
-masked → in the morning data dashboard visualizations are available for the
-stakeholders to take action.</strong></p>
+<p><strong>Nightly batch of shops product‑movement in CSV format sent to the IBM Storage
+Ceph Object Central Cluster → All PII is masked → in the morning data dashboard visualizations are available for the stakeholders to take action.</strong></p>
 </div>
 <div class="imageblock right padded">
 <div class="content">
@@ -1268,19 +1318,43 @@ stakeholders to take action.</strong></p>
 </li>
 <li>
 <p><strong>Catalog roles &amp; grants</strong> that enforce least‑privilege:</p>
-<div class="literalblock">
-<div class="content">
-<pre>| Persona      | Allowed actions |
-|--------------|-----------------|
-| *Engineer*   | read / write **RAW** |
-| *Compliance* | read **RAW** + read / write **GOLD** |
-| *Analyst*    | read **GOLD** |
-| *Admin*      | everything (`catalog_admin`) |</pre>
-</div>
-</div>
 </li>
+</ul>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 75%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Persona</th>
+<th class="tableblock halign-left valign-top">Allowed Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Engineer</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Read / Write access to <strong>RAW</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Compliance</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Read access to <strong>RAW</strong>, Read / Write access to <strong>GOLD</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Analyst</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Read-only access to <strong>GOLD</strong></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><strong>Admin</strong></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Full privileges (<code>catalog_admin</code>)</p></td>
+</tr>
+</tbody>
+</table>
+<div class="ulist">
+<ul>
 <li>
-<p>Authentication tou the catalog happens with <strong>Short‑lived OAuth 2 tokens</strong> for each persona, exported as Terraform
+<p>Authentication to the catalog happens with <strong>Short‑lived OAuth 2 tokens</strong> for each persona, exported as Terraform
 outputs so your different Query Engines: notebook, Trino CLI, and Superset pick them up automatically—no copy‑pasting secrets.</p>
 </li>
 </ul>

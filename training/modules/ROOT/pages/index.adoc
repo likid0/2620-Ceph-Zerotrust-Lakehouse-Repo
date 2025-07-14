@@ -27,7 +27,7 @@ Over an estimated 90 minutes you will:
 . Establish the Object Storage Ceph‑backed landing zone creating a dedicated S3
   IAM Account to isolate the analytic workloads.
 
-. Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by Ceph RGW—no proxy, no performance penalty.
+. Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by *Ceph Object Gateway (RGW)*, no proxy, no performance penalty.
 
 . Deploy the analytics Compute Stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.
 
@@ -124,15 +124,17 @@ image::CatalogVending.png[align=center, role=diagram]
 |*Ask* |A Spark executor authenticates once to Polaris.
 |*Answer* |Polaris returns a *time-bound STS token* whose S3 policy covers
 only the tables that executor may touch.
-|*Enforce @ Ceph* |RGW evaluates that policy – no extra proxy hop required.
+|*Enforce @ Ceph* |*Ceph Object Gateway (RGW)* evaluates that policy – no extra proxy hop required.
 |===
 
 *What you gain*
 
 * **SQL-style grants** (`GRANT SELECT`, `GRANT INSERT`) with table level granularity.
-* **Least-privilege tokens** Credentials are short-lived, valid for minutes, not months. And with the least priveledges required
-* **Engine-agnostic** – Spark, Trino, Flink all speak the same Iceberg metadata, so one policy fits all, The Icerbeg catalog is the source of truth.
-* **Full speed** – the executor streams Parquet directly from RGW, no proxys needed.
+* **Least-privilege tokens** 
+ ** Credentials are short-lived, valid for minutes, not months
+ ** And with the least priveledges required
+* **Engine-agnostic** – Spark, Trino, Flink, etc, all speak the same Iceberg metadata, so one policy fits all, The Iceberg catalog is the source of truth.
+* **Full speed** – the executor streams Parquet directly from *Ceph Object Gateway (RGW)*, no proxys needed.
 
 
 == Lab Workflow Overview
@@ -147,20 +149,25 @@ image::add1.png[float="right",role=padded,width=300]
 
 Imagine you are the data team for **FreshGoods**, a mid‑size grocery chain that
 ships online orders from 40 local stores.  Every night each store uploads a
-CSV “drop” to Ceph RGW containing the day’s *product sales* log, the dataset
-contains the following columns:
+CSV Batch to *Ceph Object Gateway (RGW)* containing the previous day *product
+sales* data, the shop dataset contains the following columns:
 
-* `product_id` • what was sold
-* `category`   • department (dairy, produce, pantry …)
-* `price`
-* `quantity`
-* `email`      • customer loyalty‑card e‑mail (PII we must protect)
-* timestamps, etc.
+[cols="1,3", options="header"]
+|===
+| Column Name     | Description
+| `product_id`    | Unique identifier for the sold product
+| `category`      | Product department (e.g., dairy, produce, pantry)
+| `price`         | Unit price of the product (in local currency)
+| `quantity`      | Number of units sold
+| `email`         | Customer email address from loyalty program (PII)
+| `timestamp`     | Date and time of the transaction
+|===
+
 
 image::logo.png[float="right",role=padded,width=300]
 
 *Your mission in this lab:* turn those ingested CSV raw files into insight the business can
-act on during the next morning —without ever letting unauthorised eyes near the PII.
+act on during the next morning without ever letting unauthorised eyes near the PII.
 
 We will walk you through that journey in this lab, compressed into 90 minutes:
 
@@ -192,7 +199,7 @@ we can see the whole life‑cycle in a single sitting.
 === Lab Workflow
 
 image::workflow_lab.png[align=center, role=diagram]
-. *From the Terminal CLI* – create RGW account & root user.
+. *From the Terminal CLI* – create *Ceph Object Gateway (RGW)* account & root user.
 . *Run Terraform (`ceph/`)* – wire bucket & IAM.
 . *Start containers* – Polaris, Trino, Jupyter, Superset in one command.
 . *Run Terraform (`polaris/`)* – create catalog, principals, RAW + GOLD tables.
@@ -207,7 +214,7 @@ image::workflow_lab.png[align=center, role=diagram]
 | Pillar | You’ll learn to…
 
 | *Storage*
-| Create Ceph RGW buckets and IAM roles from the dashboard and Terraform.
+| Create Ceph *Ceph Object Gateway (RGW)* buckets and IAM roles from the dashboard and Terraform.
 
 | *Infrastructure‑as‑Code*
 | Bootstrap all catalog objects (principals, grants, tables) with a single `terraform apply`.
@@ -231,13 +238,16 @@ Around *90 minutes*.
 
 === Provided for you
 
-* Pre‑deployed IBM Storage Ceph cluster with RGW(Object Storage Endpoint) runnig.  
+* Pre‑deployed IBM Storage Ceph cluster with *Ceph Object Gateway (RGW)* running, that provides our required S3 Endpoint.  
 * Lab repository with Terraform code, notebooks, helper scripts, and a 200‑row sample CSV.  
 
 == Checking the current state of the lab
 
+[NOTE] 
+====
 If you are reading this doc, you should have your IBM Storage Ceph Lab up and running. If that is not the case, please go
 to the IBM Storage Ceph Tech-Zone Collection and Order the Lab https://techzone.ibm.com/collection/64b92c8897187f0017773310)[TechZone Lab Access]
+====
 
 We must open a CLI terminal in our workstation machine and sudo to run the
 lab commands as the `ROOT` user. The workstation has the required ceph client
@@ -268,12 +278,12 @@ $ sudo -i
     client:   85 B/s rd, 0 op/s rd, 0 op/s wr
 ----
 
-From the previous command we can verify that we have a healthy running Ceph Cluster amd it has RGW(S3 endpoint) deployed and active
+From the previous command we can verify that we have a healthy running Ceph Cluster amd it has *Ceph Object Gateway (RGW)* , S3 endpoint,  deployed and active
 
 == Creating the required S3 IAM Account and Root Account User
 
 Before Polaris (or any other service) can create time‑bound STS tokens,
-the Ceph RGW must know **which tenant it belongs to** and **who the root
+the Ceph *Ceph Object Gateway (RGW)* must know **which tenant it belongs to** and **who the root
 identity is** for that tenant.
 In Ceph terminology:
 
@@ -285,7 +295,7 @@ and finally an initial S3 bucket that Polaris will use in later steps.
 
 === Create the *analytics* tenant
 
-The command below runs on our Desktop hosts:
+The command below runs on our Workstation CLI terminal:
 
 [source,shell]
 ----
@@ -294,7 +304,7 @@ ACCOUNT_ID=$(radosgw-admin account create --account-name=analytics | jq -r '.id'
 
 *What it does*
 
-* Creatre a new account named `analytics` in the RGW metadata store
+* Creatre a new account named `analytics` in the *Ceph Object Gateway (RGW)* metadata store
 * Exports the **Account ID** as a variable to be used in the next step
 
 === Create the root user for that tenant
@@ -337,7 +347,7 @@ aws --profile polaris-root s3 mb s3://polarisdemo
   later in the workshop
 
 
-== Configure and Run the Terraform Automation Code to Create Required Ceph RGW resources
+== Configure and Run the Terraform Automation Code to Create Required Ceph Object Gateway (RGW) resources
 
 Before we launch Spark, Trino, or Polaris we need a secure *landing zone* inside Ceph’s Object Gateway (RGW).
 Rather than clicking through the Ceph Dashboard by hand, we’ll declare every bucket, user, and role in **Terraform**—an open-source “Infrastructure as Code” (IaC) tool that turns cloud resources into version-controlled files.
@@ -356,10 +366,10 @@ image::add2.png[center,600]
 | Block | Purpose
 
 | *Variables (`*.tf` `variable` blocks)*
-| Collect user-specific inputs such as the Ceph S3/STS endpoint, the credentials profile that can talk to RGW, and the bucket name that will back the Polaris catalog.
+| Collect user-specific inputs such as the Ceph S3/STS endpoint, the credentials profile that can talk to *Ceph Object Gateway (RGW)*, and the bucket name that will back the Polaris catalog.
 
 | *AWS provider configured for Ceph*
-| Uses the standard `hashicorp/aws` provider but points its `s3`, `sts`, and `iam` endpoints to your Ceph cluster, and forces path-style S3 URLs so they work with RGW.
+| Uses the standard `hashicorp/aws` provider but points its `s3`, `sts`, and `iam` endpoints to your S3 Object Ceph cluster.
 
 | *Bucket (data or resource)*
 | Looks up—or optionally creates—the S3 bucket named in `var.bucket_name`.  The code is written with `data "aws_s3_bucket"` so it *reads* an already-provisioned bucket, but you can uncomment the `resource "aws_s3_bucket"` block to have Terraform create it instead.
@@ -370,14 +380,20 @@ image::add2.png[center,600]
 | *IAM role `polaris/catalog/client`*
 | A role that the polaris catalogs assumes via `sts:AssumeRole` to vend a token
 to the Query Engine(Spark, Trino) asking for access to a Table. It contains a single inline policy (`catalog_client_policy`) granting **only** `s3:*` on your warehouse bucket.  Principle of least privilege in action.
+|===
 
-| *Outputs*
+[cols="1,4", options="header"]
+|===
+| *Outputs* | *Description*
+
 | After `terraform apply` you get:
-  * `bucket_arn` – ARN of the warehouse bucket
-  * `account_arn` – Ceph pseudo-account ID (used in later trust policies)
-  * `location` – `s3://…` URI Polaris will register as its warehouse
-  * `role_arn` – ARN of the client role
-  * `admin_access_key` / `admin_secret_key` – keys for the admin user (the secret is marked *sensitive* so Terraform hides it in plan logs)
+|
+- `bucket_arn` – ARN of the warehouse bucket
+- `account_arn` – Ceph RGW account ID (used in later trust policies)
+- `location` – `s3://…` URI Polaris will register as its warehouse
+- `role_arn` – ARN of the client role
+- `admin_access_key` / `admin_secret_key` – keys for the admin user
+  (the secret is marked *sensitive*, so Terraform hides it in plan logs)
 |===
 
 
@@ -385,7 +401,7 @@ to the Query Engine(Spark, Trino) asking for access to a Table. It contains a si
 The Ceph Terraform Variables file we need to edit is located in our desktop
 machine at `/root/terraform/ceph` with the name `terraform.tfvars`.
 
-You only need to modify the RGW Account ID to match te Account ID you created
+You only need to modify the RGW `Account ID` to match the `Account ID` you created
 on your LAB Environment, the rest of the variables are already filled in for
 you.
 
@@ -644,7 +660,7 @@ e788a85cba27  docker.io/bitnami/spark:3.5                     /opt/bitnami/scri.
 
 === Introduction
 Our FreshGoods pipeline already has **storage** (a Ceph bucket `polarisdemo`) and **compute**
-(Spark, Trino, Superset) Containers runing.  What it still lacks is a
+(Spark, Trino, Superset) Containers running.  What it still lacks is a
 *brain/source of truth* a catalog that knows *which tables exist, who may modify them, and how credentials are issued*.
 
 
@@ -652,9 +668,8 @@ That brain is **Polaris**.  In this section you’ll run the `polaris/`
 Terraform module to automate the governance rules for our Example Data
 Pipeline:
 
-*Nightly batch of shops product‑movement drops in CSV format → All PII is
-masked → in the morning data dashboard visualizations are available for the
-stakeholders to take action.*
+*Nightly batch of shops product‑movement in CSV format sent to the IBM Storage
+Ceph Object Central Cluster → All PII is masked → in the morning data dashboard visualizations are available for the stakeholders to take action.*
 
 image::add2.png[float="right",role=padded,width=300]
 
@@ -669,14 +684,17 @@ image::add2.png[float="right",role=padded,width=300]
   `admin`, `engineer`, `compliance`, `analyst`.
 * **Catalog roles & grants** that enforce least‑privilege:
 
-  | Persona      | Allowed actions |
-  |--------------|-----------------|
-  | *Engineer*   | read / write **RAW** |
-  | *Compliance* | read **RAW** + read / write **GOLD** |
-  | *Analyst*    | read **GOLD** |
-  | *Admin*      | everything (`catalog_admin`) |
+[cols="1,3", options="header"]
+|===
+| Persona      | Allowed Actions
 
-* Authentication tou the catalog happens with **Short‑lived OAuth 2 tokens** for each persona, exported as Terraform
+| *Engineer*   | Read / Write access to **RAW**
+| *Compliance* | Read access to **RAW**, Read / Write access to **GOLD**
+| *Analyst*    | Read-only access to **GOLD**
+| *Admin*      | Full privileges (`catalog_admin`)
+|===
+
+* Authentication to the catalog happens with **Short‑lived OAuth 2 tokens** for each persona, exported as Terraform
   outputs so your different Query Engines: notebook, Trino CLI, and Superset pick them up automatically—no copy‑pasting secrets.
 
 === Modify Variables
