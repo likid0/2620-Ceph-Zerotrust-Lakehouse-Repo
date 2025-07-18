@@ -1027,9 +1027,10 @@ image::add4.png[intro,900]
 Create a bar chart that shows the ten products with the highest revenue and
 place it on the existing *Sales Overview* dashboard.
 
-Log in to Superset from your lab workstation Firefox browser.
+Log in to Superset from your lab workstation Firefox browser:
 
 *URL:* **http://localhost:8088**
+
 *Credentials:* **admin / admin** 
 
 ===  Query the data in **SQL Lab**
@@ -1097,21 +1098,26 @@ image::superset5.png[Populated Data tab,1800]
 
 Click btn:[Update chart] again to preview.
 
-[NOTE]
-====
-You may find a pop-up asking to refres/update the dashboard after your updates
-like this one image::update_chart.png[refresh,800]
-====
-
 image::superset6.png[Advanced,1800]
+
+You may find a pop-up asking to refres/update the dashboard after your updates
+like this one 
+
+image::update_chart.png[refresh,800]
+
 
 === Save the chart and add to a dashboard
 
 Click btn:[Save].
+
 Fill in:
+
   * *Chart name* :: `Top‑10 Products by Revenue`
+
   * *Add to dashboard* ::
+
     ** Fresh Goods Dashboard
+
 Click btn:[Save & Go to dashboard].
 
 image::superset7.png[Advanced,1800]
@@ -1142,8 +1148,19 @@ Throughout, Polaris enforced governance and data consistency, enabling secure mu
 
 [sidebar.ceph-spotlight]
 ****
-**IBM Storage Ceph: the foundation layer**
-What made this end-to-end scenario possible was Ceph’s combination of scale-out durability and AWS-compatible object/IAM/STS interfaces. We drove everything—tenancy, scoped credentials, bucket policy, Terraform automation, multi-engine reads—through that API surface. No data copies, no custom gateways, just open protocols and open source software you can run anywhere.
+**IBM Storage Ceph — the data‑platform backbone**
+
+Ceph turns every step of this lab from _possible_ to _trivial_:
+
+* **Scale‑out buckets** – add nodes and performance + capacity grows linearly.
+* **Durability first** – erasure coding and replica sets protect every object
+  Localy, with the option to do multisite async replication to match DR
+  requirements.
+* **Full S3 / IAM / STS fidelity** – the same Terraform modules, AWS CLI calls, and short‑lived tokens you use in the public‑cloud work here unchanged.
+* **Policy enforcement in‑flight** – RGW evaluates Polaris‑issued credentials at wire speed; no proxy needed.
+* **Unified object, block, and file** – one cluster you can extend beyond this workshop.
+
+That solid foundation lets us focus on governance and analytics instead of storage plumbing.
 ****
 
 This lab has shown how to build a Zero Trust Lakehouse that scales across personas, workloads, and engines — giving your organization both agility and control.

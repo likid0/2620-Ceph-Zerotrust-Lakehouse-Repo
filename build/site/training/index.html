@@ -1843,11 +1843,13 @@ multi‑engine analytics and also IBM Storage Ceph’s rich S3 feature set—com
 place it on the existing <strong>Sales Overview</strong> dashboard.</p>
 </div>
 <div class="paragraph">
-<p>Log in to Superset from your lab workstation Firefox browser.</p>
+<p>Log in to Superset from your lab workstation Firefox browser:</p>
 </div>
 <div class="paragraph">
-<p><strong>URL:</strong> <strong><a href="http://localhost:8088" class="bare">http://localhost:8088</a></strong>
-<strong>Credentials:</strong> <strong>admin / admin</strong></p>
+<p><strong>URL:</strong> <strong><a href="http://localhost:8088" class="bare">http://localhost:8088</a></strong></p>
+</div>
+<div class="paragraph">
+<p><strong>Credentials:</strong> <strong>admin / admin</strong></p>
 </div>
 </div>
 <div class="sect2">
@@ -1982,24 +1984,18 @@ LIMIT 10;</code></pre>
 <div class="paragraph">
 <p>Click <b class="button">Update chart</b> again to preview.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-<div class="paragraph">
-<p>You may find a pop-up asking to refres/update the dashboard after your updates
-like this one image::update_chart.png[refresh,800]</p>
-</div>
-</td>
-</tr>
-</table>
-</div>
 <div class="imageblock">
 <div class="content">
 <img src="_images/superset6.png" alt="Advanced" width="1800">
+</div>
+</div>
+<div class="paragraph">
+<p>You may find a pop-up asking to refres/update the dashboard after your updates
+like this one</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="_images/update_chart.png" alt="refresh" width="800">
 </div>
 </div>
 </div>
@@ -2007,12 +2003,30 @@ like this one image::update_chart.png[refresh,800]</p>
 <div class="sect2">
 <h3 id="_save_the_chart_and_add_to_a_dashboard"><a class="anchor" href="#_save_the_chart_and_add_to_a_dashboard"></a>12.5. Save the chart and add to a dashboard</h3>
 <div class="paragraph">
-<p>Click <b class="button">Save</b>.
-Fill in:
-  * <strong>Chart name</strong> :: <code>Top‑10 Products by Revenue</code>
-  * <strong>Add to dashboard</strong> ::
-    ** Fresh Goods Dashboard
-Click <b class="button">Save &amp; Go to dashboard</b>.</p>
+<p>Click <b class="button">Save</b>.</p>
+</div>
+<div class="paragraph">
+<p>Fill in:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Chart name</strong> :: <code>Top‑10 Products by Revenue</code></p>
+</li>
+<li>
+<p><strong>Add to dashboard</strong> ::</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Fresh Goods Dashboard</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Click <b class="button">Save &amp; Go to dashboard</b>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -2063,8 +2077,34 @@ Click <b class="button">Save &amp; Go to dashboard</b>.</p>
 <div class="sidebarblock ceph-spotlight">
 <div class="content">
 <div class="paragraph">
-<p><strong>IBM Storage Ceph: the foundation layer</strong>
-What made this end-to-end scenario possible was Ceph’s combination of scale-out durability and AWS-compatible object/IAM/STS interfaces. We drove everything—tenancy, scoped credentials, bucket policy, Terraform automation, multi-engine reads—through that API surface. No data copies, no custom gateways, just open protocols and open source software you can run anywhere.</p>
+<p><strong>IBM Storage Ceph — the data‑platform backbone</strong></p>
+</div>
+<div class="paragraph">
+<p>Ceph turns every step of this lab from <em>possible</em> to <em>trivial</em>:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Scale‑out buckets</strong> – add nodes and performance + capacity grows linearly.</p>
+</li>
+<li>
+<p><strong>Durability first</strong> – erasure coding and replica sets protect every object
+Localy, with the option to do multisite async replication to match DR
+requirements.</p>
+</li>
+<li>
+<p><strong>Full S3 / IAM / STS fidelity</strong> – the same Terraform modules, AWS CLI calls, and short‑lived tokens you use in the public‑cloud work here unchanged.</p>
+</li>
+<li>
+<p><strong>Policy enforcement in‑flight</strong> – RGW evaluates Polaris‑issued credentials at wire speed; no proxy needed.</p>
+</li>
+<li>
+<p><strong>Unified object, block, and file</strong> – one cluster you can extend beyond this workshop.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>That solid foundation lets us focus on governance and analytics instead of storage plumbing.</p>
 </div>
 </div>
 </div>
