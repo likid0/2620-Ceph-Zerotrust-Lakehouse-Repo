@@ -180,6 +180,14 @@
 <p>In this guided exercise you will construct a Zero‑Trust data‑lakehouse
 prototype on IBM Storage Ceph Object Storage .The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.</p>
 </div>
+<div class="sidebarblock ceph-spotlight">
+<div class="content">
+<div class="paragraph">
+<p><strong>Why IBM Storage Ceph?</strong>
+This lab leans on <strong>Ceph Object Gateway (RGW)</strong> because it exposes a rich, AWS-compatible <strong>S3 + IAM + STS</strong> API surface, complete with multi-tenancy. That means we can drive on-prem object storage using the <strong>same Terraform + AWS CLI patterns</strong> teams use in public cloud, and immediately take advantage of scoped credentials, bucket policies, and identity isolation. Ceph’s scale-out design also keeps the data path parallel and fast as analytics engines grow.</p>
+</div>
+</div>
+</div>
 <div class="imageblock right padded">
 <div class="content">
 <img src="_images/ceph_Datalake.png" alt="ceph Datalake" width="190">
@@ -195,7 +203,7 @@ prototype on IBM Storage Ceph Object Storage .The lab is organised to famili
 IAM Account to isolate the analytic workloads.</p>
 </li>
 <li>
-<p>Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by <strong>Ceph Object Gateway (RGW)</strong>, no proxy, no performance penalty.</p>
+<p>Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by <strong>Ceph Object Gateway (RGW)</strong>, Ceph’s native support for S3 IAM and STS APIs enables us to issue scoped, short-lived tokens without custom proxies or third-party plugin</p>
 </li>
 <li>
 <p>Deploy the analytics Compute Stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.</p>
@@ -207,6 +215,9 @@ IAM Account to isolate the analytic workloads.</p>
 <p>Inspect and verify the security posture at each stage to confirm that Zero‑Trust requirements are met.</p>
 </li>
 </ol>
+</div>
+<div class="paragraph">
+<p>Underlying all these steps is IBM Storage Ceph—a scale-out object storage platform whose rich S3 API, native IAM/ST​S implementation, and high-throughput architecture make it the perfect foundation for modern lakehouses.</p>
 </div>
 <div class="paragraph">
 <p>You can get some context on the Data Lakehouse Governance desing challenges by reading Chapters 2 &amp; 3.
@@ -252,8 +263,14 @@ notebooks) must operate on the <strong>same</strong> objects, a critical governa
 emerges:
 how to impose <strong>database-style, table-level privileges</strong> directly at the
 object layer, <strong>without</strong> introducing performance bottlenecks or an explosion of
-one-off security plug-ins.
-The sections below dissect the problem, evaluates common but inadequate
+one-off security plug-ins.</p>
+</div>
+<div class="paragraph">
+<p>While object storage systems vary widely in their feature set, Ceph stands out
+because its S3-compatible Ceph Object Gateway (RGW) offers <strong>native IAM constructs</strong>: accounts, users, roles, and STS tokens—making it possible to integrate identity-aware workflows without external components.</p>
+</div>
+<div class="paragraph">
+<p>The sections below dissect the problem, evaluates common but inadequate
 approaches, and show how Polaris resolves it through credential vending.</p>
 </div>
 <div class="sect2">
@@ -415,6 +432,9 @@ only the tables that executor may touch.</p></td>
 </tbody>
 </table>
 <div class="paragraph">
+<p>This is possible because Cephi Object Gateway (RGW) implements AWS-style IAM semantics—down to ARNs, trust policies, and token vending—so existing AWS tooling and Terraform providers work transparently against Ceph.</p>
+</div>
+<div class="paragraph">
 <p><strong>What you gain</strong></p>
 </div>
 <div class="ulist">
@@ -430,7 +450,7 @@ only the tables that executor may touch.</p></td>
 <p>Credentials are short-lived, valid for minutes, not months</p>
 </li>
 <li>
-<p>And with the least priveledges required</p>
+<p>And with the least privileges required</p>
 </li>
 </ul>
 </div>
@@ -546,7 +566,7 @@ morning.  The hashed emails never leave the lake; the analyst never sees PII.</p
 </ol>
 </div>
 <div class="paragraph">
-<p>The glue that enforces who can access what is ithe <strong>Polaris</strong> Iceberg Restfull Catalog.</p>
+<p>The glue that enforces who can access what is the <strong>Polaris</strong> Iceberg RESTful Catalog.</p>
 </div>
 <div class="paragraph">
 <p>By the end of the lab you’ll have a governed catalog exactly like a real
@@ -901,6 +921,9 @@ to the Query Engine(Spark, Trino) asking for access to a Table. It contains a si
 </tr>
 </tbody>
 </table>
+<div class="paragraph">
+<p>These constructs are implemented natively by Ceph Object Gateway (RGW) meaning governance and least-privilege enforcement live directly in the storage layer, not in an overlay or external proxy.</p>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_modify_variables"><a class="anchor" href="#_modify_variables"></a>7.3. Modify Variables</h3>
@@ -1201,6 +1224,21 @@ One Podman‑Compose file spins up four services:</p>
 <p>Superset for dashboards</p>
 </li>
 </ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><strong>Data stays in Ceph.</strong>
+All compute containers are ephemeral; the authoritative data lives durably in your IBM Storage Ceph cluster (erasure-coded, replicated, and accessible via S3/STS). You can tear down and rebuild the analytics stack without re-seeding data.</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 <div class="sect2">
@@ -1585,8 +1623,12 @@ Step 2 of the notebook <code>Spark Sessions setup</code> may take around 1 minut
 <h2 id="_access_the_same_data_pipeline_tables_with_different_query_engines_trino"><a class="anchor" href="#_access_the_same_data_pipeline_tables_with_different_query_engines_trino"></a>11. Access the same Data Pipeline Tables with Different Query Engines (Trino)</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> Icerberg Compatible SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls.
-image::add3.png[float="right",role=padded,width=300]</p>
+<p>Thanks to Polaris’s REST‑based Iceberg catalog, you can point <strong>any</strong> Iceberg Compatible SQL engine at the same tables and get the <strong>exact</strong> same schema, data, and fine‑grained access controls. Because the underlying objects sit in IBM Storage Ceph, multiple engines can read (and, where permitted, mutate) the same Iceberg tables in parallel without copying data between silos.</p>
+</div>
+<div class="imageblock right padded">
+<div class="content">
+<img src="_images/add3.png" alt="add3" width="300">
+</div>
 </div>
 <div class="paragraph">
 <p>In this section, we’ll use the Trino CLI against our <code>prod</code> catalog and <code>prod_ns</code> schema—running as the <strong>Engineer</strong> persona—to:</p>
@@ -1716,7 +1758,15 @@ If you attempt the same statement on a v1 table Trino will return
 </div>
 </div>
 <div class="paragraph">
-<p>Trino will report how many rows were deleted.</p>
+<p>Trino will report how many rows were deleted. Somithing like the following
+output, meaning it has deleted 2 rows that had duplicate entries.,</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-plain hljs" data-lang="plain">DELETE: 2 rows.
+Query 20250715_185908_00003_gbm67, FINISHED, 1 node
+Splits: 15 total, 15 done (100.00%)</code></pre>
+</div>
 </div>
 </div>
 <div class="sect2">
@@ -1772,7 +1822,8 @@ HAVING COUNT(*) &gt; 1;</code></pre>
 </ul>
 </div>
 <div class="paragraph">
-<p>This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.</p>
+<p>This illustrates the power of a unified, governed Iceberg catalog for
+multi‑engine analytics and also IBM Storage Ceph’s rich S3 feature set—complete with IAM, STS, and fine-grained bucket policies—proved essential for building a zero-trust lakehouse without proprietary gateways or add-ons. Its ability to combine cloud-native governance APIs with enterprise-grade scalability makes it the ideal backbone for secure, multi-engine analytics.</p>
 </div>
 </div>
 </div>
@@ -1791,21 +1842,12 @@ HAVING COUNT(*) &gt; 1;</code></pre>
 <p>Create a bar chart that shows the ten products with the highest revenue and
 place it on the existing <strong>Sales Overview</strong> dashboard.</p>
 </div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
 <div class="paragraph">
-<p>Log in to Superset from your Desktop Firefox Browser, open a new tab a user
-<strong>URL: http//localhost:8088</strong>  with <strong>user =<code>admin</code> / password =<code>admin</code></strong>.
-The container resets these credentials every time it (re)starts.</p>
+<p>Log in to Superset from your lab workstation Firefox browser.</p>
 </div>
-</td>
-</tr>
-</table>
+<div class="paragraph">
+<p><strong>URL:</strong> <strong><a href="http://localhost:8088" class="bare">http://localhost:8088</a></strong>
+<strong>Credentials:</strong> <strong>admin / admin</strong></p>
 </div>
 </div>
 <div class="sect2">
@@ -1838,7 +1880,7 @@ LIMIT 10;</code></pre>
 <div class="sect2">
 <h3 id="_save_the_query_as_a_dataset"><a class="anchor" href="#_save_the_query_as_a_dataset"></a>12.3. Save the query as a dataset</h3>
 <div class="paragraph">
-<p>Click the <strong>Save</strong> button above the results → <strong>Save as dataset</strong>.</p>
+<p>Click <strong>Save ▶</strong> and choose <strong>Save dataset</strong>.</p>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -1885,14 +1927,12 @@ LIMIT 10;</code></pre>
 <col style="width: 33.3333%;">
 <col style="width: 33.3334%;">
 </colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">Control</th>
-<th class="tableblock halign-left valign-top">Value</th>
-<th class="tableblock halign-left valign-top">How</th>
-</tr>
-</thead>
 <tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Control</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Value</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">How</p></td>
+</tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><strong>X‑axis</strong></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>product_name</code></p></td>
@@ -1941,6 +1981,21 @@ LIMIT 10;</code></pre>
 </div>
 <div class="paragraph">
 <p>Click <b class="button">Update chart</b> again to preview.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>You may find a pop-up asking to refres/update the dashboard after your updates
+like this one image::update_chart.png[refresh,800]</p>
+</div>
+</td>
+</tr>
+</table>
 </div>
 <div class="imageblock">
 <div class="content">
@@ -2004,6 +2059,14 @@ Click <b class="button">Save &amp; Go to dashboard</b>.</p>
 </div>
 <div class="paragraph">
 <p>Throughout, Polaris enforced governance and data consistency, enabling secure multi-user access without data duplication or copy-pasting credentials.</p>
+</div>
+<div class="sidebarblock ceph-spotlight">
+<div class="content">
+<div class="paragraph">
+<p><strong>IBM Storage Ceph: the foundation layer</strong>
+What made this end-to-end scenario possible was Ceph’s combination of scale-out durability and AWS-compatible object/IAM/STS interfaces. We drove everything—tenancy, scoped credentials, bucket policy, Terraform automation, multi-engine reads—through that API surface. No data copies, no custom gateways, just open protocols and open source software you can run anywhere.</p>
+</div>
+</div>
 </div>
 <div class="paragraph">
 <p>This lab has shown how to build a Zero Trust Lakehouse that scales across personas, workloads, and engines — giving your organization both agility and control.</p>

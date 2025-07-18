@@ -20,6 +20,12 @@
 In this guided exercise you will construct a Zero‑Trust data‑lakehouse
 prototype on IBM Storage Ceph Object Storage .The lab is organised to familiarise you with both the architectural rationale and the practical implementation steps required for a modern, governed lakehouse.
 
+[sidebar.ceph-spotlight]
+****
+*Why IBM Storage Ceph?*
+This lab leans on **Ceph Object Gateway (RGW)** because it exposes a rich, AWS-compatible *S3 + IAM + STS* API surface, complete with multi-tenancy. That means we can drive on-prem object storage using the **same Terraform + AWS CLI patterns** teams use in public cloud, and immediately take advantage of scoped credentials, bucket policies, and identity isolation. Ceph’s scale-out design also keeps the data path parallel and fast as analytics engines grow.
+****
+
 image::ceph_Datalake.png[float="right",role=padded,width=190]
 
 Over an estimated 90 minutes you will:
@@ -27,13 +33,16 @@ Over an estimated 90 minutes you will:
 . Establish the Object Storage Ceph‑backed landing zone creating a dedicated S3
   IAM Account to isolate the analytic workloads.
 
-. Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by *Ceph Object Gateway (RGW)*, no proxy, no performance penalty.
+. Apply fine‑grained access control by issuing time‑bound credentials through Polaris; table‑level policies are enforced directly by *Ceph Object Gateway (RGW)*, Ceph’s native support for S3 IAM and STS APIs enables us to issue scoped, short-lived tokens without custom proxies or third-party plugin
 
 . Deploy the analytics Compute Stack—Spark for transformation, Trino for interactive SQL, and Superset for visual exploration—using Infrastructure‑as‑Code and container orchestration.
 
 . Execute an end‑to‑end workflow: ingest raw objects, transform them into Iceberg tables, validate data quality, and present results in a dashboard.
 
 . Inspect and verify the security posture at each stage to confirm that Zero‑Trust requirements are met.
+
+Underlying all these steps is IBM Storage Ceph—a scale-out object storage platform whose rich S3 API, native IAM/ST​S implementation, and high-throughput architecture make it the perfect foundation for modern lakehouses.
+
 
 You can get some context on the Data Lakehouse Governance desing challenges by reading Chapters 2 & 3.
 Or Proceed directly to the hands-on lab instructions in Chapter 4
@@ -57,6 +66,10 @@ emerges:
 how to impose **database-style, table-level privileges** directly at the
 object layer, *without* introducing performance bottlenecks or an explosion of
 one-off security plug-ins.
+
+While object storage systems vary widely in their feature set, Ceph stands out
+because its S3-compatible Ceph Object Gateway (RGW) offers **native IAM constructs**: accounts, users, roles, and STS tokens—making it possible to integrate identity-aware workflows without external components.
+
 The sections below dissect the problem, evaluates common but inadequate
 approaches, and show how Polaris resolves it through credential vending.
 
@@ -127,12 +140,15 @@ only the tables that executor may touch.
 |*Enforce @ Ceph* |*Ceph Object Gateway (RGW)* evaluates that policy – no extra proxy hop required.
 |===
 
+This is possible because Cephi Object Gateway (RGW) implements AWS-style IAM semantics—down to ARNs, trust policies, and token vending—so existing AWS tooling and Terraform providers work transparently against Ceph.
+
+
 *What you gain*
 
 * **SQL-style grants** (`GRANT SELECT`, `GRANT INSERT`) with table level granularity.
 * **Least-privilege tokens** 
  ** Credentials are short-lived, valid for minutes, not months
- ** And with the least priveledges required
+ ** And with the least privileges required
 * **Engine-agnostic** – Spark, Trino, Flink, etc, all speak the same Iceberg metadata, so one policy fits all, The Iceberg catalog is the source of truth.
 * **Full speed** – the executor streams Parquet directly from *Ceph Object Gateway (RGW)*, no proxys needed.
 
@@ -190,7 +206,7 @@ We will walk you through that journey in this lab, compressed into 90 minutes:
   vs. previous day*—the chart the merchandisers see at roll‑call every
   morning.  The hashed emails never leave the lake; the analyst never sees PII.
 
-The glue that enforces who can access what is ithe **Polaris** Iceberg Restfull Catalog.
+The glue that enforces who can access what is the **Polaris** Iceberg RESTful Catalog.
 
 By the end of the lab you’ll have a governed catalog exactly like a real
 retailer might run—just shrunk to one bucket, two tables, and four personas so
@@ -395,6 +411,8 @@ to the Query Engine(Spark, Trino) asking for access to a Table. It contains a si
 - `admin_access_key` / `admin_secret_key` – keys for the admin user
   (the secret is marked *sensitive*, so Terraform hides it in plan logs)
 |===
+
+These constructs are implemented natively by Ceph Object Gateway (RGW) meaning governance and least-privilege enforcement live directly in the storage layer, not in an overlay or external proxy.
 
 
 === Modify Variables
@@ -615,6 +633,13 @@ One Podman‑Compose file spins up four services:
 * Trino worker for ad‑hoc SQL
 * Jupyter Lab for Spark notebooks
 * Superset for dashboards
+
+[NOTE]
+====
+**Data stays in Ceph.**
+All compute containers are ephemeral; the authoritative data lives durably in your IBM Storage Ceph cluster (erasure-coded, replicated, and accessible via S3/STS). You can tear down and rebuild the analytics stack without re-seeding data.
+====
+
 
 === Deployment with Podman Compose using wrapper script
 
@@ -840,7 +865,8 @@ By the end of this notebook you will have run a full end‑to‑end Spark data p
 
 == Access the same Data Pipeline Tables with Different Query Engines (Trino)
 
-Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** Icerberg Compatible SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. 
+Thanks to Polaris’s REST‑based Iceberg catalog, you can point **any** Iceberg Compatible SQL engine at the same tables and get the **exact** same schema, data, and fine‑grained access controls. Because the underlying objects sit in IBM Storage Ceph, multiple engines can read (and, where permitted, mutate) the same Iceberg tables in parallel without copying data between silos.
+
 image::add3.png[float="right",role=padded,width=300]
 
 In this section, we’ll use the Trino CLI against our `prod` catalog and `prod_ns` schema—running as the **Engineer** persona—to:
@@ -943,7 +969,15 @@ DELETE FROM products_raw
    );
 ----
 
-Trino will report how many rows were deleted.
+Trino will report how many rows were deleted. Somithing like the following
+output, meaning it has deleted 2 rows that had duplicate entries.,
+
+[source,plain]
+----
+DELETE: 2 rows. 
+Query 20250715_185908_00003_gbm67, FINISHED, 1 node 
+Splits: 15 total, 15 done (100.00%)
+----
 
 === Verify the duplicates are gone
 
@@ -982,7 +1016,9 @@ At this point you have:
 * Used Trino to validate and even mutate the RAW data
 * Done all of it under the same fine‑grained RBAC rules
 
-This illustrates the power of a unified, governed Iceberg catalog for multi‑engine analytics.
+This illustrates the power of a unified, governed Iceberg catalog for
+multi‑engine analytics and also IBM Storage Ceph’s rich S3 feature set—complete with IAM, STS, and fine-grained bucket policies—proved essential for building a zero-trust lakehouse without proprietary gateways or add-ons. Its ability to combine cloud-native governance APIs with enterprise-grade scalability makes it the ideal backbone for secure, multi-engine analytics.
+
 
 == Using Apache Superset to build visualizations to gain insights into our data
 
@@ -991,12 +1027,10 @@ image::add4.png[intro,900]
 Create a bar chart that shows the ten products with the highest revenue and
 place it on the existing *Sales Overview* dashboard.
 
-[NOTE]
-====
-Log in to Superset from your Desktop Firefox Browser, open a new tab a user
-**URL: http//localhost:8088**  with **user =`admin` / password =`admin`**.
-The container resets these credentials every time it (re)starts.
-====
+Log in to Superset from your lab workstation Firefox browser.
+
+*URL:* **http://localhost:8088**
+*Credentials:* **admin / admin** 
 
 ===  Query the data in **SQL Lab**
 
@@ -1021,7 +1055,7 @@ image::superset1.png[Query results,1800]
 
 ===  Save the query as a dataset
 
-Click the *Save* button above the results → **Save as dataset**.
+Click **Save ▶** and choose **Save dataset**.
 
 image::superset2.png[Save dataset dialog,1800]
 
@@ -1045,7 +1079,6 @@ image::Superset4.png[Pie Chart,1800]
 
 |===
 |Control |Value |How
-
 |*X‑axis* |`product_name` |Drag the column from the left column list.
 |*Metrics* |`revenue` |Drag the metric; remove `COUNT(*)` if present.
 |*Sort by* |`revenue` ↓ (descending)|Drag `revenue` to the field; keep Desc.
@@ -1063,6 +1096,12 @@ image::superset5.png[Populated Data tab,1800]
 * Pick a colour scheme you like.
 
 Click btn:[Update chart] again to preview.
+
+[NOTE]
+====
+You may find a pop-up asking to refres/update the dashboard after your updates
+like this one image::update_chart.png[refresh,800]
+====
 
 image::superset6.png[Advanced,1800]
 
@@ -1100,6 +1139,12 @@ Executed a complete ETL pipeline with masking, curation, and validation
 Visualized actionable insights via SQL and dashboards
 
 Throughout, Polaris enforced governance and data consistency, enabling secure multi-user access without data duplication or copy-pasting credentials.
+
+[sidebar.ceph-spotlight]
+****
+**IBM Storage Ceph: the foundation layer**
+What made this end-to-end scenario possible was Ceph’s combination of scale-out durability and AWS-compatible object/IAM/STS interfaces. We drove everything—tenancy, scoped credentials, bucket policy, Terraform automation, multi-engine reads—through that API surface. No data copies, no custom gateways, just open protocols and open source software you can run anywhere.
+****
 
 This lab has shown how to build a Zero Trust Lakehouse that scales across personas, workloads, and engines — giving your organization both agility and control.
 
