@@ -844,7 +844,7 @@ Copy the printed URL (including the `?token=…` query) into your VNC Desktop br
 
 image::jup1.png[jupiter1,1800]
 
-In the left sidebar, navigate to the `notebooks/` directory and click on `polaris_data_pipeline.ipynb` to open it.
+In the left sidebar, navigate to the `notebooks/` directory and double-click on `polaris_data_pipeline.ipynb` to open it.
 
 image::jup2.png[jupiter2,1800]
 
@@ -855,9 +855,16 @@ Follow the notebook cells in order.  Each cell contains explanatory markdown alo
   * Verify and preview pipeline output as the Analyst persona
   * (Bonus) Validate that unauthorized personas cannot see or write data they shouldn’t
 
-You can run cells one by one using the > button, and  waiting to get the output before running the next cell:
+You can run cells one by one clicking the > button on the dashboar(or the
+keyboard shortcut of: SHIFT+Enter) , and waiting to get the output before running the next cell:
 
 IMPORTANT: Step 2 of the notebook `Spark Sessions setup` may take around 1 minute to produce output
+
+example output you should see once the Spark Sessions setup has finished: 
+
+image::spark_screen1.png[spark,600]
+
+Then you can run one by one each cell waiting for the outpus to show.
 
 image::jup3.png[jupiter3,1800]
 
